@@ -1,4 +1,5 @@
 import { createInsForgeServerClient } from '@/lib/insforge/server'
+import { check } from './action-result'
 
 // The InsForge SDK has no upsert(); page_content rows are pre-seeded by the
 // schema migration for every key this app uses, so update() is normally
@@ -13,15 +14,17 @@ export async function setPageContent(page: string, key: string, value: string, i
     .maybeSingle()
 
   if (existing) {
-    await insforge.database
+    const result = await insforge.database
       .from('page_content')
       .update({ value, ...(imageKey !== undefined ? { image_key: imageKey } : {}) })
       .eq('page', page)
       .eq('key', key)
+    check(result)
   } else {
-    await insforge.database.from('page_content').insert([
+    const result = await insforge.database.from('page_content').insert([
       { page, key, value_type: imageKey !== undefined ? 'image' : 'text', value, image_key: imageKey ?? null },
     ])
+    check(result)
   }
 }
 

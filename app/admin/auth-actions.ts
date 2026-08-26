@@ -4,8 +4,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@insforge/sdk'
 import { createAuthActions } from '@insforge/sdk/ssr'
-import { createInsForgeAdminClient } from '@/lib/insforge/server'
-import { hasAnyAdminUser } from '@/lib/cms/auth'
+import { applyPendingAccess } from '@/lib/cms/auth'
 
 export type ActionResult = { error: string } | { ok: true } | null
 
@@ -31,6 +30,7 @@ export async function signInAction(formData: FormData): Promise<ActionResult> {
     return { error: error?.message ?? 'Sign in failed.' }
   }
 
+  await applyPendingAccess(data.user.id, data.user.email, null)
   redirect('/admin')
 }
 
@@ -41,10 +41,6 @@ export async function signOutAction() {
 }
 
 export async function setupFirstAdminAction(formData: FormData): Promise<ActionResult> {
-  if (await hasAnyAdminUser()) {
-    return { error: 'Setup has already been completed. Please sign in instead.' }
-  }
-
   const email = String(formData.get('email') ?? '').trim()
   const password = String(formData.get('password') ?? '')
   const fullName = String(formData.get('full_name') ?? '').trim()
@@ -60,23 +56,22 @@ export async function setupFirstAdminAction(formData: FormData): Promise<ActionR
     redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/admin/login`,
   })
 
-  if (error || !data?.user) {
-    return { error: error?.message ?? 'Could not create the account.' }
+  if (error) {
+    if (error.statusCode === 409 || /already/i.test(error.message ?? '')) {
+      return {
+        error:
+          'That email is already registered. If you already received a verification code for it, go to the "Have a verification code?" link below to finish signing in.',
+      }
+    }
+    return { error: error.message ?? 'Could not create the account.' }
   }
 
-  if (await hasAnyAdminUser()) {
-    return { error: 'Setup has already been completed by someone else. Please sign in.' }
-  }
-
-  const admin = createInsForgeAdminClient()
-  const { error: insertError } = await admin.database.from('app_users').insert([
-    { id: data.user.id, email, full_name: fullName || null, role: 'admin' },
-  ])
-  if (insertError) {
-    return { error: 'Account created, but could not grant admin access. Contact support.' }
-  }
-
-  if (!data.requireEmailVerification) redirect('/admin')
+  // signUp() intentionally omits `user` while email verification is
+  // pending (privacy — no account details before the address is proven).
+  // There's nothing more to link yet: applyPendingAccess() runs from
+  // verifyEmailAction/signInAction once we actually have a user id, and its
+  // "nobody is admin yet" fallback covers bootstrapping this account.
+  if (!data?.requireEmailVerification) redirect('/admin')
   redirect(`/admin/verify?email=${encodeURIComponent(email)}`)
 }
 
@@ -91,6 +86,7 @@ export async function verifyEmailAction(formData: FormData): Promise<ActionResul
     return { error: error?.message ?? 'Invalid or expired code.' }
   }
 
+  await applyPendingAccess(data.user.id, email, null)
   redirect('/admin')
 }
 
@@ -104,4 +100,37 @@ export async function resendVerificationAction(formData: FormData): Promise<Acti
   })
   if (error) return { error: error.message ?? 'Could not resend the code.' }
   return { ok: true }
+}
+
+export async function sendResetPasswordAction(formData: FormData): Promise<ActionResult> {
+  const email = String(formData.get('email') ?? '').trim()
+  if (!email) return { error: 'Enter your email.' }
+
+  const { error } = await plainClient().auth.sendResetPasswordEmail({
+    email,
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/admin/reset-password`,
+  })
+  if (error) return { error: error.message ?? 'Could not send the reset code.' }
+  return { ok: true }
+}
+
+export async function resetPasswordAction(formData: FormData): Promise<ActionResult> {
+  const email = String(formData.get('email') ?? '').trim()
+  const code = String(formData.get('otp') ?? '').trim()
+  const newPassword = String(formData.get('password') ?? '')
+  if (!email || !code) return { error: 'Enter your email and the code from your reset email.' }
+  if (newPassword.length < 6) return { error: 'Password must be at least 6 characters.' }
+
+  const client = plainClient()
+  const { data, error } = await client.auth.exchangeResetPasswordToken({ email, code })
+  if (error || !data?.token) {
+    return { error: error?.message ?? 'Invalid or expired code.' }
+  }
+
+  const { error: resetError } = await client.auth.resetPassword({ newPassword, otp: data.token })
+  if (resetError) {
+    return { error: resetError.message ?? 'Could not reset the password.' }
+  }
+
+  redirect('/admin/login')
 }

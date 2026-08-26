@@ -34,6 +34,9 @@ export default async function SetupPage() {
         </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
+          Already have a verification code? <Link href="/admin/verify" className="font-medium text-primary">Enter it here</Link>
+        </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
           Already set up? <Link href="/admin/login" className="font-medium text-primary">Sign in</Link>
         </p>
       </div>

@@ -31,6 +31,9 @@ export default async function LoginPage() {
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Have a verification code? <Link href="/admin/verify" className="font-medium text-primary">Verify email</Link>
         </p>
+        <p className="mt-2 text-center text-sm text-muted-foreground">
+          Forgot your password? <Link href="/admin/forgot-password" className="font-medium text-primary">Reset it</Link>
+        </p>
       </div>
     </div>
   )

@@ -2,7 +2,9 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { insforge } from '@/lib/insforge/client'
+import type { ActionResult } from '@/lib/cms/action-result'
 
 export function ImageField({
   label,
@@ -14,7 +16,7 @@ export function ImageField({
   label: string
   currentUrl: string | null
   currentKey: string | null
-  onUpload: (url: string, key: string) => Promise<void>
+  onUpload: (url: string, key: string) => Promise<ActionResult>
   aspect?: string
 }) {
   const [pending, startTransition] = useTransition()
@@ -27,17 +29,32 @@ export function ImageField({
     startTransition(async () => {
       const { data, error: uploadError } = await insforge.storage.from('site-images').uploadAuto(file)
       if (uploadError || !data) {
-        setError(uploadError?.message ?? 'Upload failed.')
+        const message = uploadError?.message ?? 'Upload failed.'
+        setError(message)
+        toast.error(message)
         return
       }
 
-      const previousKey = currentKey
-      await onUpload(data.url, data.key)
-
-      if (previousKey) {
-        await insforge.storage.from('site-images').remove(previousKey)
+      let result: ActionResult
+      try {
+        result = await onUpload(data.url, data.key)
+      } catch (err) {
+        result = { error: err instanceof Error ? err.message : 'Could not save the image.' }
       }
 
+      if ('error' in result) {
+        setError(result.error)
+        toast.error(result.error)
+        // Clean up the just-uploaded file since nothing references it.
+        await insforge.storage.from('site-images').remove(data.key)
+        return
+      }
+
+      if (currentKey) {
+        await insforge.storage.from('site-images').remove(currentKey)
+      }
+
+      toast.success('Image updated')
       router.refresh()
     })
   }

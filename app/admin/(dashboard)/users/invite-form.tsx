@@ -1,31 +1,42 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { inviteUserAction } from './actions'
-import { Field, Select, TextInput } from '@/components/admin/ui'
+import { Field, Select, TextInput, SectionCheckboxes } from '@/components/admin/ui'
 import { SubmitButton } from '@/components/admin/submit-button'
 
 type State = { error: string } | { ok: true; tempPassword: string } | undefined
 
 export function InviteUserForm() {
   const [state, formAction] = useActionState<State, FormData>(async (_prev, formData) => inviteUserAction(formData), undefined)
+  const [role, setRole] = useState<'editor' | 'admin'>('editor')
 
   return (
     <div className="flex flex-col gap-4">
-      <form action={formAction} className="flex items-end gap-3">
-        <Field label="Full name" htmlFor="invite-name">
-          <TextInput id="invite-name" name="full_name" required />
-        </Field>
-        <Field label="Email" htmlFor="invite-email">
-          <TextInput id="invite-email" name="email" type="email" required />
-        </Field>
-        <Field label="Role" htmlFor="invite-role">
-          <Select id="invite-role" name="role" defaultValue="editor">
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </Select>
-        </Field>
-        <SubmitButton pendingText="Creating…">Add user</SubmitButton>
+      <form action={formAction} className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Full name" htmlFor="invite-name">
+            <TextInput id="invite-name" name="full_name" required className="w-48" />
+          </Field>
+          <Field label="Email" htmlFor="invite-email">
+            <TextInput id="invite-email" name="email" type="email" required className="w-64" />
+          </Field>
+          <Field label="Role" htmlFor="invite-role">
+            <Select id="invite-role" name="role" value={role} onChange={(e) => setRole(e.target.value as 'editor' | 'admin')} className="w-32">
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+            </Select>
+          </Field>
+          <SubmitButton pendingText="Creating…">Add user</SubmitButton>
+        </div>
+
+        {role === 'editor' ? (
+          <Field label="What can they edit?" hint="Only checked sections will be editable by this person.">
+            <SectionCheckboxes />
+          </Field>
+        ) : (
+          <p className="rounded-lg bg-primary/5 px-3 py-2 text-sm text-primary">Admins automatically get full access to every section, plus user management.</p>
+        )}
       </form>
 
       {state && 'error' in state && (

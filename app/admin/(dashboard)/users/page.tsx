@@ -1,61 +1,75 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { UserCog } from 'lucide-react'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { createInsForgeAdminClient } from '@/lib/insforge/server'
-import { AdminCard, Field, Select, TextInput } from '@/components/admin/ui'
+import { AdminCard, EmptyState, RoleBadge } from '@/components/admin/ui'
+import { initials } from '@/lib/cms/format'
 import type { AppUser } from '@/lib/cms/types'
 import { InviteUserForm } from './invite-form'
-import { updateUserRoleAction, removeUserAccessAction } from './actions'
-import { SubmitButton } from '@/components/admin/submit-button'
+import { UserDetail } from './user-row'
 
-export default async function UsersAdminPage() {
+export default async function UsersAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ user?: string }>
+}) {
   const admin = await getCurrentAdmin()
   if (!admin || admin.profile?.role !== 'admin') redirect('/admin')
+
+  const { user: selectedId } = await searchParams
 
   const client = createInsForgeAdminClient()
   const { data } = await client.database
     .from('app_users')
-    .select('id, email, full_name, role, created_at')
+    .select('id, email, full_name, role, sections, created_at')
     .order('created_at', { ascending: true })
-    .limit(200)
+    .limit(500)
 
   const users = (data ?? []) as AppUser[]
+  const selected = selectedId ? users.find((u) => u.id === selectedId) : undefined
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-semibold text-foreground">Users & access</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Everyone here can sign into the admin panel. Admins can also manage users; editors can edit content and images.
+          Select a person to see or change what they can edit. Admins can do everything, including managing users; editors only see and edit the sections you grant them.
         </p>
       </div>
 
-      <AdminCard title="Team">
-        <div className="flex flex-col divide-y divide-border">
-          {users.map((u) => (
-            <div key={u.id} className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-medium text-foreground">{u.full_name || u.email}</p>
-                <p className="text-xs text-muted-foreground">{u.email} · joined {new Date(u.created_at).toLocaleDateString()}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <form action={updateUserRoleAction.bind(null, u.id)} className="flex items-center gap-2">
-                  <Select name="role" defaultValue={u.role} disabled={u.id === admin.id} className="!w-32">
-                    <option value="editor">Editor</option>
-                    <option value="admin">Admin</option>
-                  </Select>
-                  {u.id !== admin.id && <SubmitButton className="!px-2 !py-1 text-xs">Update</SubmitButton>}
-                </form>
-                {u.id !== admin.id && (
-                  <form action={removeUserAccessAction.bind(null, u.id)}>
-                    <SubmitButton variant="danger" className="!px-2 !py-1 text-xs" pendingText="Removing…">Remove access</SubmitButton>
-                  </form>
-                )}
-                {u.id === admin.id && <span className="text-xs text-muted-foreground">(you)</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </AdminCard>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] lg:items-start">
+        <AdminCard title="Team" icon={<UserCog className="size-5" aria-hidden="true" />} description={`${users.length} ${users.length === 1 ? 'person' : 'people'}`}>
+          <div className="flex flex-col divide-y divide-border">
+            {users.map((u) => (
+              <Link
+                key={u.id}
+                href={`/admin/users?user=${u.id}`}
+                className={`flex items-center gap-3 rounded-md px-2 py-2.5 transition ${
+                  u.id === selectedId ? 'bg-primary/10' : 'hover:bg-muted'
+                }`}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                  {initials(u.full_name || u.email)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-foreground">{u.full_name || u.email}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{u.email}</span>
+                </span>
+                <RoleBadge role={u.role} />
+              </Link>
+            ))}
+          </div>
+        </AdminCard>
+
+        {selected ? (
+          <UserDetail user={selected} isSelf={selected.id === admin.id} />
+        ) : (
+          <AdminCard>
+            <EmptyState title="Select a person" body="Choose someone from the list to view or change their access." />
+          </AdminCard>
+        )}
+      </div>
 
       <AdminCard title="Add someone new" description="They'll need to verify their email with a code before signing in.">
         <InviteUserForm />
