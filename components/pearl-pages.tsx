@@ -228,12 +228,13 @@ export function ProjectsPage() {
           intro="Explore the projects where PEARL researchers and partners are working together to make health systems and communities more equitable."
         />
 
-        <section className="project-feature-section">
+        <section className="project-feature-section project-feature-primary">
           <Reveal className="site-container project-feature-header">
-            <span className="project-index">01</span>
+            <div className="project-header-meta"><span className="project-index">01</span><span>Active research / Food systems</span></div>
             <h2>Transforming Food Systems</h2>
             <p className="project-name">Surplus to Solutions</p>
             <p className="project-subtitle">Enhancing farm-level food redistribution of avoidable edible food waste in rural Nova Scotia</p>
+            <div className="project-header-line" aria-hidden="true"><span>Rural Nova Scotia</span><span>Community-based participatory research</span></div>
           </Reveal>
 
           <Reveal className="site-container project-banner-wrap" delay={80}>
