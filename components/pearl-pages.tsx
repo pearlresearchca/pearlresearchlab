@@ -140,9 +140,9 @@ const iftPartners: Logo[] = [
 
 const tfsIntro = [
   'Food waste and food insecurity exist alongside one another across Canada. While substantial amounts of food are lost or wasted throughout the food system, many communities continue to face barriers to accessing nutritious and affordable food. In rural Nova Scotia, these challenges are shaped by the realities of agricultural production, geography, transportation, infrastructure, seasonal availability, labour, markets, and connections between producers and community food organizations.',
-  'Surplus to Solutions examines how avoidable food waste is generated and managed at the farm level, and how food that could still be consumed can be redirected to communities rather than becoming waste. The project focuses on the pathways through which farm-level surplus moves, or does not move, toward food rescue organizations and community food programs, and on the conditions that make redistribution possible.',
-  'The project brings together researchers, farmers, food rescue organizations, food-system partners, and community stakeholders to examine avoidable food waste as a systems issue rather than simply as an issue of individual behaviour. Decisions about surplus are influenced by interconnected economic, logistical, social, behavioural, institutional, and policy factors. Understanding these factors is essential to developing approaches that are practical for farmers and sustainable for the organizations receiving and redistributing food.',
-  'The research is led through an interdisciplinary collaboration at PEARL Lab, St. Francis Xavier University, bringing together expertise in public health, food systems, agriculture, behavioural science, rural sociology, and community-based research. The project also involves collaborators from Mount Saint Vincent University, Dalhousie University, and Acadia University, alongside community and food-system partners including Second Harvest and FarmWorks Investment Co-operative. These partnerships connect academic expertise with the experiences and networks of farmers, food rescue organizations, and community food organizations.',
+  'Surplus to Solutions examines how avoidable food waste is generated and managed at the farm level and how food that could still be consumed can be redirected to communities rather than becoming waste. The project focuses on the pathways through which farm-level surplus moves, or does not move, toward food rescue organizations and community food programs, and on the conditions that make redistribution possible.',
+  'The project brings together researchers, farmers, food rescue organizations, food-system partners, and community stakeholders to examine avoidable food waste as a systems issue rather than simply an issue of individual behaviour. Decisions about surplus are influenced by interconnected economic, logistical, social, behavioural, institutional, and policy factors. Understanding these factors is essential to developing approaches that are practical for farmers and sustainable for the organizations receiving and redistributing food.',
+  'The research is led through an interdisciplinary collaboration at PEARL Lab, St. Francis Xavier University, bringing together expertise in public health, food systems, agriculture, behavioural science, rural sociology, and community-based research. The project also involves collaborators from Mount Saint Vincent University, Dalhousie University, and Acadia University, alongside community and food-system partners including Second Harvest and FarmWorks Investment Co-operative. These partnerships connect academic expertise with the experiences and networks of farmers, food rescue organizations, and community food systems.',
 ]
 
 const tfsSections = [
@@ -150,7 +150,7 @@ const tfsSections = [
     heading: 'Understanding avoidable food waste at the farm level',
     image: 'Farm Level.jpeg',
     body: [
-      "A central focus of the research is understanding what happens to food that is produced but does not enter conventional markets or reach consumers. Food may become surplus for many different reasons — market conditions, changing demand, production volumes, seasonal timing, quality or appearance standards, labour availability, storage capacity, transportation, and limited connections to redistribution organizations can all influence what happens to food after it has been produced.",
+      "A central focus of the research is understanding what happens to food that is produced but does not enter conventional markets or reach consumers. Food may become surplus for many different reasons. Market conditions, changing demand, production volumes, seasonal timing, quality or appearance standards, labour availability, storage capacity, transportation, and limited connections to redistribution organizations can all influence what happens to food after it has been produced.",
       'The project therefore looks beyond how much food is wasted to understand the pathways, decisions, and conditions that shape what happens to avoidable food waste.',
       "We are particularly interested in understanding the experiences of farmers and the practical realities they face when considering whether and how surplus food can be redistributed. For redistribution to be a realistic option, farmers need pathways that fit within their existing operations and account for timing, labour, storage, transportation, food safety, costs, and connections with organizations that can receive the food.",
     ],
@@ -165,7 +165,7 @@ const tfsSections = [
   {
     heading: 'Collaborative and community-based research',
     body: [
-      'The project uses a community-based participatory research approach, bringing people working within the food system into the research process. Farmers, food rescue organizations, food-system partners, and other stakeholders will contribute to understanding the current system, identifying priorities, and shaping potential solutions.',
+      'The project uses a community-based participatory research approach, bringing people working within the food system into the research process. Farmers, food rescue organizations, food-system partners, service providers, and other stakeholders will contribute to understanding the current system, identifying priorities, and shaping potential solutions.',
       'This collaborative approach allows research findings to be considered alongside practical knowledge from people who work directly within agricultural production, food rescue, and community food systems.',
     ],
   },
@@ -180,7 +180,7 @@ const tfsSections = [
 
 const iftIntro = [
   'Non-urgent interfacility patient transfers (IFTs) are an essential but often overlooked component of healthcare delivery. Patients may need to move between healthcare facilities to access specialized consultations, diagnostic procedures, rehabilitation, ongoing treatment, or care closer to home. In Nova Scotia, where specialized services are often concentrated in regional centres and many communities are geographically dispersed, effective interfacility transfer systems are critical to ensuring that patients can access the care they need, when they need it.',
-  'Yet moving a patient between facilities is much more than arranging transportation. Every transfer involves clinical decision-making, coordination between sending and receiving teams, transportation and staffing resources, communication across healthcare teams, and decisions about timing and prioritization. These processes operate across organizational and geographic boundaries, making non-urgent IFTs both operationally complex and important to health equity. As our research has demonstrated, an interfacility transfer can simultaneously be a clinical handoff, a logistical process, and an equity decision.',
+  'Yet moving a patient between facilities is much more than arranging transportation. Every transfer involves clinical decision-making, coordination between sending and receiving facilities, transportation and staffing resources, communication across healthcare teams, and decisions about timing and prioritization. These processes operate across organizational and geographic boundaries, making non-urgent IFTs both operationally complex and important to health equity. As our research has demonstrated, an interfacility transfer can simultaneously be a clinical handoff, a logistical process, and an equity decision.',
 ]
 
 const iftSections = [
@@ -269,9 +269,8 @@ export function ProjectsPage() {
 
         <section className="project-feature-section">
           <Reveal className="site-container project-feature-header">
-            <span className="project-index">02</span>
-            <h2>Health Systems & Services</h2>
-            <p className="project-name">Interfacility Patient Transfers</p>
+            <div className="project-header-meta"><span className="project-index">02</span><span>Active research / Health systems & services</span></div>
+            <h2>Interfacility Patient Transfers</h2>
             <p className="project-subtitle">Advancing equitable and integrated non-urgent interfacility patient transfers in Nova Scotia</p>
           </Reveal>
 
