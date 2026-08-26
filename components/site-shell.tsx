@@ -53,7 +53,11 @@ export function SiteHeader() {
           <span className="brand-copy"><strong>PEARL</strong><span>Public Health Equity<br />Advocacy Research Lab</span></span>
         </Link>
         <nav className={open ? 'desktop-nav mobile-open' : 'desktop-nav'} aria-label="Primary navigation">
-          {nav.map(([label, href]) => <Link key={href} href={href} className={pathname === href ? 'active' : ''} onClick={() => setOpen(false)}>{label}</Link>)}
+          {nav.map(([label, href], i) => (
+            <Link key={href} href={href} className={pathname === href ? 'active' : ''} onClick={() => setOpen(false)}>
+              <span className="nav-index" aria-hidden="true">0{i + 1}</span>{label}
+            </Link>
+          ))}
           <Link href="/contact" className="header-cta" onClick={() => setOpen(false)}>Work with us <ArrowUpRight aria-hidden="true" /></Link>
         </nav>
         <button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>{open ? <X /> : <Menu />}</button>

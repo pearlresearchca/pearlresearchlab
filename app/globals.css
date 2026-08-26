@@ -186,16 +186,36 @@ body::after{bottom:12%;left:1.5%;width:70px;height:70px;background:linear-gradie
 a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--primary);outline-offset:3px;border-radius:4px}
 
 /* Premium full-screen mobile navigation */
+.nav-index{display:none}
 @media(max-width:640px){
-  .desktop-nav{position:fixed;inset:0;top:0;height:100dvh;background:var(--background);padding:104px 32px 40px;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:2px;border-bottom:0;overflow-y:auto;z-index:15}
-  .desktop-nav a{font-family:var(--font-serif),Georgia,serif;font-size:32px;padding:14px 0}
+  .desktop-nav{position:fixed;inset:0;top:0;height:100dvh;background:var(--background);padding:100px 28px 32px;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;border-bottom:0;overflow-y:auto;z-index:15}
+  .desktop-nav a{display:flex;align-items:center;gap:14px;font-family:var(--font-sans),Arial,sans-serif;font-size:18px;font-weight:700;padding:16px 2px;box-shadow:0 1px 0 var(--border)}
+  .nav-index{display:inline-block;color:var(--accent);font:700 12px/1 Arial,sans-serif;letter-spacing:.08em;flex:0 0 auto}
   .desktop-nav.mobile-open a{opacity:0;animation:pearl-fade-up .5s cubic-bezier(.22,1,.36,1) both}
   .desktop-nav.mobile-open a:nth-child(1){animation-delay:.05s}
   .desktop-nav.mobile-open a:nth-child(2){animation-delay:.1s}
   .desktop-nav.mobile-open a:nth-child(3){animation-delay:.15s}
   .desktop-nav.mobile-open a:nth-child(4){animation-delay:.2s}
   .desktop-nav.mobile-open a:nth-child(5){animation-delay:.25s}
-  .desktop-nav.mobile-open .header-cta{display:inline-flex!important;opacity:0;animation:pearl-fade-up .5s cubic-bezier(.22,1,.36,1) both;animation-delay:.3s;margin-top:22px}
+  .desktop-nav.mobile-open .header-cta{display:flex!important;justify-content:center;opacity:0;animation:pearl-fade-up .5s cubic-bezier(.22,1,.36,1) both;animation-delay:.3s;margin-top:24px}
 }
 @media(prefers-reduced-motion:reduce){.page-transition{animation:none}.desktop-nav.mobile-open a,.desktop-nav.mobile-open .header-cta{opacity:1;animation:none}}
+
+/* Mobile: center primary content for a calmer, more considered small-screen layout.
+   Long-form reading content (bios, research/project prose) stays left-aligned for readability. */
+@media(max-width:640px){
+  .home-hero .hero-content,.page-hero .site-container,.statement-section .site-container,.section-heading,.feature-grid>div,.values-grid article,.partners-intro{text-align:center}
+  .hero-actions{align-items:center}
+  .image-caption{text-align:center}
+  .stream-card{align-items:center;text-align:center}
+  .contact-details{align-items:center}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:36px 20px}
+  .footer-grid>div:first-child{grid-column:1/-1;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .footer-grid>div:nth-child(2),.footer-grid>div:nth-child(3){padding:0 12px}
+  .collab-card{display:flex;flex-direction:column;align-items:center;text-align:center}
+  .team-cta-inner{align-items:center;text-align:center}
+  .team-row .team-photo-frame{margin:0 auto}
+  .team-card-content{text-align:center}
+  .team-card-content p:not(.role-tag){text-align:left}
+}
 
