@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect } from 'react'
-import { PageFrame } from '@/components/site-shell'
+import { SiteFooter, SiteHeader } from '@/components/site-shell'
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -10,7 +10,8 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   }, [error])
 
   return (
-    <PageFrame>
+    <>
+      <SiteHeader logoUrl="/pearl/pearlresearchlab%20assets/image.png" />
       <main>
         <section className="page-hero">
           <div className="site-container">
@@ -26,6 +27,11 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           </div>
         </section>
       </main>
-    </PageFrame>
+      <SiteFooter
+        blurb="Advancing public health equity through research, advocacy, and collaboration."
+        tagline="Research for healthier, more equitable communities."
+        copyright="© 2026 PEARL Research Lab"
+      />
+    </>
   )
 }

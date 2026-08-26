@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
-import { PageFrame } from '@/components/site-shell'
+import { PageFrame } from '@/components/page-frame'
 
 export default function NotFound() {
   return (

@@ -24,7 +24,7 @@ const nav = [
 
 const LINKEDIN_URL = 'https://www.linkedin.com/company/pearl-population-health-equity-advocacy-research-lab/'
 
-export function SiteHeader() {
+export function SiteHeader({ logoUrl }: { logoUrl: string }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -49,7 +49,7 @@ export function SiteHeader() {
     <header className={scrolled ? 'site-header is-scrolled' : 'site-header'}>
       <div className="site-container header-inner">
         <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="PEARL home">
-          <img src="/pearl/pearlresearchlab%20assets/image.png" alt="PEARL logo" className="brand-mark" />
+          {logoUrl && <img src={logoUrl} alt="PEARL logo" className="brand-mark" />}
           <span className="brand-copy"><strong>PEARL</strong><span>Public Health Equity<br />Advocacy Research Lab</span></span>
         </Link>
         <nav className={open ? 'desktop-nav mobile-open' : 'desktop-nav'} aria-label="Primary navigation">
@@ -66,13 +66,13 @@ export function SiteHeader() {
   )
 }
 
-export function SiteFooter() {
+export function SiteFooter({ blurb, tagline, copyright }: { blurb: string; tagline: string; copyright: string }) {
   return (
     <footer className="site-footer">
       <div className="site-container footer-grid">
         <div>
           <Link href="/" className="footer-brand">PEARL<span>Public Health Equity<br />Advocacy Research Lab</span></Link>
-          <p>Advancing public health equity through research, advocacy, and collaboration.</p>
+          <p>{blurb}</p>
           <a className="footer-social" href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label="PEARL on LinkedIn">
             <LinkedinIcon aria-hidden="true" />
           </a>
@@ -88,14 +88,12 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="site-container footer-bottom">
-        <span>© 2026 PEARL Research Lab</span>
-        <span>Research for healthier, more equitable communities.</span>
+        <span>{copyright}</span>
+        <span>{tagline}</span>
       </div>
     </footer>
   )
 }
-
-export function PageFrame({ children }: { children: React.ReactNode }) { return <><SiteHeader /><div className="page-transition">{children}</div><SiteFooter /></> }
 
 export function PageHero({ kicker, title, intro }: { kicker: string; title: string; intro?: string }) { return <section className="page-hero"><Reveal className="site-container"><p className="eyebrow">{kicker}</p><h1>{title}</h1>{intro && <p className="hero-intro">{intro}</p>}</Reveal></section> }
 
