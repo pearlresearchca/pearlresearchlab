@@ -38,6 +38,13 @@ export function SiteHeader() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [open])
+
   return (
     <header className={scrolled ? 'site-header is-scrolled' : 'site-header'}>
       <div className="site-container header-inner">
@@ -84,7 +91,7 @@ export function SiteFooter() {
   )
 }
 
-export function PageFrame({ children }: { children: React.ReactNode }) { return <><SiteHeader />{children}<SiteFooter /></> }
+export function PageFrame({ children }: { children: React.ReactNode }) { return <><SiteHeader /><div className="page-transition">{children}</div><SiteFooter /></> }
 
 export function PageHero({ kicker, title, intro }: { kicker: string; title: string; intro?: string }) { return <section className="page-hero"><Reveal className="site-container"><p className="eyebrow">{kicker}</p><h1>{title}</h1>{intro && <p className="hero-intro">{intro}</p>}</Reveal></section> }
 
