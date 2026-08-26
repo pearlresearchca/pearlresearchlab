@@ -1,3 +1,4 @@
+import { Stethoscope, Users } from 'lucide-react'
 import { ArrowLink, PageFrame, PageHero, SectionHeading } from './site-shell'
 import { asset } from '@/lib/pearl-assets'
 import { ContactForm } from './contact-form'
@@ -501,6 +502,19 @@ export function TeamPage() {
   )
 }
 
+const collabs = [
+  {
+    icon: Users,
+    title: 'Community organizations',
+    text: 'We do a lot of community-engaged work, and we actively encourage community organizations to reach out with questions, ideas, or opportunities for collaboration.',
+  },
+  {
+    icon: Stethoscope,
+    title: 'Health-care organizations & partners',
+    text: 'We also conduct health-care delivery and program evaluations. Health-care organizations and other partners are welcome to contact us about potential evaluation projects.',
+  },
+]
+
 export function ContactPage() {
   return (
     <PageFrame>
@@ -510,7 +524,24 @@ export function ContactPage() {
           title="Let's build healthier communities together."
           intro="Whether you are interested in collaborating on research, exploring partnership opportunities, or joining the PEARL team, we would be happy to connect."
         />
-        <section className="contact-section">
+
+        <section className="collab-section">
+          <div className="site-container">
+            <SectionHeading kicker="Ways to work with us" title="We want to hear from you." body="Two of the most common ways people work with PEARL — if either sounds like you, reach out below." />
+            <div className="collab-grid">
+              {collabs.map(({ icon: Icon, title, text }, i) => (
+                <Reveal className="collab-card" delay={i * 80} key={title}>
+                  <Icon className="collab-icon" aria-hidden="true" />
+                  <h3>{title}</h3>
+                  <p>{text}</p>
+                  <ArrowLink href="#start-a-conversation">Start a conversation</ArrowLink>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="contact-section" id="start-a-conversation">
           <div className="site-container contact-grid">
             <Reveal>
               <SectionHeading title="Start a conversation" body="Tell us a little about what you are working on or how we might collaborate." />
