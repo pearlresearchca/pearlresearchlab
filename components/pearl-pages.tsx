@@ -148,7 +148,7 @@ const tfsIntro = [
 const tfsSections = [
   {
     heading: 'Understanding avoidable food waste at the farm level',
-    image: 'Approach.jpeg',
+    image: 'Farm Level.jpeg',
     body: [
       "A central focus of the research is understanding what happens to food that is produced but does not enter conventional markets or reach consumers. Food may become surplus for many different reasons — market conditions, changing demand, production volumes, seasonal timing, quality or appearance standards, labour availability, storage capacity, transportation, and limited connections to redistribution organizations can all influence what happens to food after it has been produced.",
       'The project therefore looks beyond how much food is wasted to understand the pathways, decisions, and conditions that shape what happens to avoidable food waste.',
@@ -164,7 +164,6 @@ const tfsSections = [
   },
   {
     heading: 'Collaborative and community-based research',
-    image: 'Farm Level.jpeg',
     body: [
       'The project uses a community-based participatory research approach, bringing people working within the food system into the research process. Farmers, food rescue organizations, food-system partners, and other stakeholders will contribute to understanding the current system, identifying priorities, and shaping potential solutions.',
       'This collaborative approach allows research findings to be considered alongside practical knowledge from people who work directly within agricultural production, food rescue, and community food systems.',
@@ -194,7 +193,7 @@ const iftSections = [
   },
   {
     heading: 'A systems-level approach',
-    image: 'img_1979.jpg.jpeg',
+    image: 'Approach.jpeg',
     body: [
       'The program takes a systems-level approach to understanding interfacility transfers. Rather than examining transfer performance through a single measure or perspective, we consider how policies, governance structures, operational processes, technologies, healthcare capacity, geography, and patient and provider experiences interact to shape the transfer pathway. Our overarching question is: what works, for whom, under what circumstances, and through which mechanisms do non-urgent interfacility patient transfer systems support timely, efficient, and equitable access to healthcare?',
       'Our work to date has included examining policies and practices governing non-urgent IFTs across federal, provincial, and organizational levels, with particular attention to how equity is reflected in transfer systems. We have explored the relationship between policy intent and day-to-day practice, including the effects of capacity constraints, communication and information gaps, technology-related workflow challenges, and coordination across organizations.',
@@ -232,13 +231,13 @@ export function ProjectsPage() {
         <section className="project-feature-section">
           <Reveal className="site-container project-feature-header">
             <span className="project-index">01</span>
-            <p className="eyebrow">Transforming food systems</p>
-            <h2>Surplus to Solutions</h2>
+            <h2>Transforming Food Systems</h2>
+            <p className="project-name">Surplus to Solutions</p>
             <p className="project-subtitle">Enhancing farm-level food redistribution of avoidable edible food waste in rural Nova Scotia</p>
           </Reveal>
 
           <Reveal className="site-container project-banner-wrap" delay={80}>
-            <img className="project-banner" src={asset('Transforming Food Systems.jpeg')} alt="Fresh produce growing in a field in rural Nova Scotia" />
+            <img className="project-banner" src={asset('TFS.jpeg')} alt="High-tunnel greenhouses across a farm field in rural Nova Scotia" />
           </Reveal>
 
           <Reveal className="site-container project-feature-intro prose" delay={120}>
@@ -270,8 +269,8 @@ export function ProjectsPage() {
         <section className="project-feature-section">
           <Reveal className="site-container project-feature-header">
             <span className="project-index">02</span>
-            <p className="eyebrow">Health systems & services</p>
-            <h2>Interfacility Patient Transfers</h2>
+            <h2>Health Systems & Services</h2>
+            <p className="project-name">Interfacility Patient Transfers</p>
             <p className="project-subtitle">Advancing equitable and integrated non-urgent interfacility patient transfers in Nova Scotia</p>
           </Reveal>
 
