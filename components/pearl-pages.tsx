@@ -29,7 +29,7 @@ export function AboutPage() {
           <Reveal className="site-container two-column">
             <div>
               <p className="eyebrow">Our mission</p>
-              <h2>To generate actionable, equity-centred research that improves population health and strengthens health systems.</h2>
+              <h2>To generate actionable, equity-centred research that improves public health and strengthens health systems.</h2>
             </div>
             <div className="prose">
               <p>We bring together researchers, students, healthcare providers, policymakers, and community partners to address complex health and social challenges through innovative, evidence-informed approaches.</p>
@@ -55,7 +55,7 @@ export function AboutPage() {
                 ['E', 'Equity', 'Centering health equity and social justice in all aspects of our work.'],
                 ['A', 'Advocacy', 'Translating evidence into action to advance policy and systems change.'],
                 ['R', 'Research excellence', 'Conducting rigorous, ethical, and innovative interdisciplinary research.'],
-                ['L', 'Leadership', 'Fostering future leaders and driving transformative change in population health.'],
+                ['L', 'Leadership', 'Fostering future leaders and driving transformative change in public health.'],
               ].map(([letter, title, text], i) => (
                 <Reveal delay={i * 70} key={letter}>
                   <article>
@@ -187,7 +187,7 @@ const iftSections = [
   {
     heading: "PEARL's research program",
     body: [
-      'The Population Health, Equity, and Advocacy Research Lab (PEARL Lab) at St. Francis Xavier University examines how non-urgent interfacility transfer systems function across Nova Scotia and how they can better support timely, efficient, safe, and equitable access to healthcare. The work is conducted in collaboration with Emergency Health Services (EHS), Emergency Medical Care Inc. (EMC), Nova Scotia Health, the Care Coordination Centre, and other health-system and research partners.',
+      'The Public Health, Equity, and Advocacy Research Lab (PEARL Lab) at St. Francis Xavier University examines how non-urgent interfacility transfer systems function across Nova Scotia and how they can better support timely, efficient, safe, and equitable access to healthcare. The work is conducted in collaboration with Emergency Health Services (EHS), Emergency Medical Care Inc. (EMC), Nova Scotia Health, the Care Coordination Centre, and other health-system and research partners.',
     ],
     logos: iftPartners,
   },
@@ -313,7 +313,7 @@ const leadership: TeamMember[] = [
     role: 'Supervisor & Director',
     image: 'Dr. Mahasti Khakpour.png',
     bio: [
-      'Dr. Mahasti Khakpour is the Director of the Population Health Equity Advocacy Research Lab (PEARL) and an Assistant Professor at St. Francis Xavier University. With over eight years of research experience, she is an interdisciplinary health researcher specializing in public health, health equity, food systems, and health economics.',
+      'Dr. Mahasti Khakpour is the Director of the Public Health Equity Advocacy Research Lab (PEARL) and an Assistant Professor at St. Francis Xavier University. With over eight years of research experience, she is an interdisciplinary health researcher specializing in public health, health equity, food systems, and health economics.',
       'She earned her Ph.D. from the University of Saskatchewan, where her research examined food security among refugees, laying the foundation for her ongoing work with vulnerable populations, including immigrants and refugees. Her research has spanned Canada, Pakistan, Iran, Switzerland, and Australia, focusing on improving health outcomes through innovative, community-engaged approaches.',
       'Through PEARL, Dr. Khakpour leads collaborative research that advances equitable, sustainable, and evidence-informed solutions to complex public health challenges.',
     ],
@@ -389,7 +389,7 @@ const iftTeam: TeamMember[] = [
     role: 'Research Assistant',
     image: 'Erin.jpeg',
     bio: [
-      'Erin graduated from St. Francis Xavier University with a Bachelor of Arts and Science in Health. She is a Research Assistant with the Population Health & Equity Advocacy Research Lab (PEARL).',
+      'Erin graduated from St. Francis Xavier University with a Bachelor of Arts and Science in Health. She is a Research Assistant with the Public Health & Equity Advocacy Research Lab (PEARL).',
       'She supports projects focused on health equity and informing systems through policy reviews, evidence synthesis, knowledge translation, and program evaluation.',
       "Erin's interests include public health, health equity, program evaluation, and knowledge translation. She enjoys applying evidence to support practical solutions that strengthen communities and improve health outcomes.",
     ],
@@ -402,7 +402,7 @@ const pastTeam: TeamMember[] = [
     role: 'Research Assistant',
     image: 'Elmirah Ahmad  Research Assistant.jpeg',
     bio: [
-      'Elmirah is a Master of Public Health student at Western University completing her practicum with the Population Health Equity Advocacy and Research (PEARL) Lab.',
+      'Elmirah is a Master of Public Health student at Western University completing her practicum with the Public Health Equity Advocacy and Research (PEARL) Lab.',
       'She is currently involved in the non-urgent interfacility transfers in Nova Scotia project, where she supports qualitative research and policy analysis to better understand barriers within the patient transfer system.',
       'She is interested in health systems, health equity, and using research to inform practical solutions that improve access to care.',
     ],
@@ -412,7 +412,7 @@ const pastTeam: TeamMember[] = [
     role: 'Research Assistant',
     image: 'Prachi Ajay Dabholkar  Research Assistant.jpeg',
     bio: [
-      'Prachi is a Research Assistant at the Population Health Equity Advocacy and Research (PEARL) Lab.',
+      'Prachi is a Research Assistant at the Public Health Equity Advocacy and Research (PEARL) Lab.',
       'She is currently working on the Non-Urgent Interfacility Transfers in Nova Scotia project, where she contributes to equity-focused policy analysis, qualitative research, and geospatial analysis to better understand interfacility transfer patterns, access, and service delivery across the province.',
       'Her research interests include health systems, health equity, and improving access to care for underserved and equity-deserving populations.',
     ],

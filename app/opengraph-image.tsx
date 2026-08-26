@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const alt = 'PEARL | Population Health Equity Advocacy Research Lab'
+export const alt = 'PEARL | Public Health Equity Advocacy Research Lab'
 export const size = {
   width: 1200,
   height: 630,
@@ -45,7 +45,7 @@ export default function Image() {
           </div>
         </div>
         <div style={{ display: 'flex', fontSize: 60, lineHeight: 1.2, maxWidth: 920 }}>
-          Population Health Equity Advocacy Research Lab
+          Public Health Equity Advocacy Research Lab
         </div>
         <div style={{ display: 'flex', fontSize: 28, marginTop: 32, color: '#cbdad6', maxWidth: 820 }}>
           Evidence that moves communities forward.

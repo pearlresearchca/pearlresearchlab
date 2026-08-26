@@ -17,8 +17,8 @@ const inter = Inter({
 })
 
 const siteUrl = 'https://pearlresearchlab.vercel.app'
-const siteName = 'PEARL | Population Health Equity Advocacy Research Lab'
-const siteDescription = 'PEARL advances population health equity through research, advocacy, and collaboration.'
+const siteName = 'PEARL | Public Health Equity Advocacy Research Lab'
+const siteDescription = 'PEARL advances public health equity through research, advocacy, and collaboration.'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   description: siteDescription,
   keywords: [
     'PEARL',
-    'population health equity',
+    'public health equity',
     'health equity research',
     'health systems research',
     'food systems research',

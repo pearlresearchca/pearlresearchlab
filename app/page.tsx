@@ -31,7 +31,7 @@ export default function HomePage() {
         <section className="home-hero">
           <div className="site-container hero-grid">
             <div className="hero-content">
-              <p className="eyebrow">Population health equity advocacy research lab</p>
+              <p className="eyebrow">Public health equity advocacy research lab</p>
               <h1>Evidence that moves communities forward.</h1>
               <p className="hero-intro">PEARL brings people, systems, and research together to advance healthier, more equitable communities.</p>
               <div className="hero-actions">

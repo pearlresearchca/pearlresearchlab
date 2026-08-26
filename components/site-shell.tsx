@@ -50,7 +50,7 @@ export function SiteHeader() {
       <div className="site-container header-inner">
         <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="PEARL home">
           <img src="/pearl/pearlresearchlab%20assets/image.png" alt="PEARL logo" className="brand-mark" />
-          <span className="brand-copy"><strong>PEARL</strong><span>Population Health Equity<br />Advocacy Research Lab</span></span>
+          <span className="brand-copy"><strong>PEARL</strong><span>Public Health Equity<br />Advocacy Research Lab</span></span>
         </Link>
         <nav className={open ? 'desktop-nav mobile-open' : 'desktop-nav'} aria-label="Primary navigation">
           {nav.map(([label, href]) => <Link key={href} href={href} className={pathname === href ? 'active' : ''} onClick={() => setOpen(false)}>{label}</Link>)}
@@ -67,8 +67,8 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="site-container footer-grid">
         <div>
-          <Link href="/" className="footer-brand">PEARL<span>Population Health Equity<br />Advocacy Research Lab</span></Link>
-          <p>Advancing population health equity through research, advocacy, and collaboration.</p>
+          <Link href="/" className="footer-brand">PEARL<span>Public Health Equity<br />Advocacy Research Lab</span></Link>
+          <p>Advancing public health equity through research, advocacy, and collaboration.</p>
           <a className="footer-social" href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label="PEARL on LinkedIn">
             <LinkedinIcon aria-hidden="true" />
           </a>
