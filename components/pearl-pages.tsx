@@ -420,9 +420,9 @@ const pastTeam: TeamMember[] = [
   },
 ]
 
-function TeamCard({ member, delay = 0 }: { member: TeamMember; delay?: number }) {
+function TeamCard({ member, delay = 0, reverse = false }: { member: TeamMember; delay?: number; reverse?: boolean }) {
   return (
-    <Reveal className="team-feature-card" delay={delay}>
+    <Reveal className={reverse ? 'team-row team-row-reverse' : 'team-row'} delay={delay}>
       <div className="team-photo-frame">
         <img src={asset(member.image)} alt={`${member.name}, ${member.role}`} />
       </div>
@@ -445,9 +445,7 @@ function TeamGroup({ title, members, past = false }: { title: string; members: T
           <h2>{title}</h2>
         </div>
       </Reveal>
-      <div className="team-feature-grid">
-        {members.map((member, i) => <TeamCard member={member} delay={i * 70} key={member.name} />)}
-      </div>
+      {members.map((member, i) => <TeamCard member={member} delay={i * 60} reverse={i % 2 === 1} key={member.name} />)}
     </section>
   )
 }
@@ -478,9 +476,7 @@ export function TeamPage() {
               <p className="eyebrow">Leadership & coordination</p>
               <h2>Guiding the work</h2>
             </Reveal>
-            <div className="team-feature-grid">
-              {leadership.map((member, i) => <TeamCard member={member} delay={i * 80} key={member.name} />)}
-            </div>
+            {leadership.map((member, i) => <TeamCard member={member} delay={i * 80} reverse={i % 2 === 1} key={member.name} />)}
 
             <Reveal className="team-group-heading team-group-heading-spaced">
               <p className="eyebrow">Research team</p>
