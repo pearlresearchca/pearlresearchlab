@@ -1,0 +1,3 @@
+'use client'
+import { ArrowUpRight } from 'lucide-react'
+export function ContactForm(){return <form className="contact-form" onSubmit={(e)=>{e.preventDefault(); alert('Thanks for reaching out. We will be in touch soon.')}}><label htmlFor="name">Name <span>Required</span></label><input id="name" required placeholder="Your name" /><label htmlFor="email">Email <span>Required</span></label><input id="email" type="email" required placeholder="you@example.com" /><label htmlFor="message">Message</label><textarea id="message" required rows={6} placeholder="How can we work together?" /><button className="button button-primary" type="submit">Send message <ArrowUpRight aria-hidden="true" /></button></form>}
