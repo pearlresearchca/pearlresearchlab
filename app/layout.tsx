@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Inter } from 'next/font/google'
+import { PublicAnalytics } from '@/components/public-analytics'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -95,6 +96,7 @@ export default function RootLayout({
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
+      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && <PublicAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />}
     </html>
   )
 }
