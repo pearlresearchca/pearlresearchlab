@@ -2,6 +2,9 @@
 
 import { createHash } from 'node:crypto'
 import { headers } from 'next/headers'
+import { after } from 'next/server'
+import { sendFormEmails } from '@/lib/email/form-notifications'
+import { getSiteConfig } from './queries'
 import { createInsForgeAdminClient } from '@/lib/insforge/server'
 import { findNode, normalizeDoc, walk } from './tree'
 import type { BuilderNode } from './types'
@@ -75,7 +78,7 @@ function validateFields(fields: FieldDef[], fd: FormData): { values: Value[]; fi
 // Validates, rate-limits, uploads files and stores the submission. A retry of
 // the same form fill (same token) is recognised and not stored twice; if the
 // record can't be saved, files uploaded for it are removed again.
-async function store(fd: FormData, fields: FieldDef[], meta: { pageId: string | null; formName: string; keyPrefix: string }): Promise<Result> {
+async function store(fd: FormData, fields: FieldDef[], meta: { pageId: string | null; formName: string; keyPrefix: string; pageLabel: string; thankYou: boolean }): Promise<Result> {
   if (String(fd.get('__website') ?? '').trim()) return { ok: true } // honeypot: pretend success to bots
 
   const checked = validateFields(fields, fd)
@@ -104,15 +107,29 @@ async function store(fd: FormData, fields: FieldDef[], meta: { pageId: string | 
     values.push({ label: field.label, kind: field.kind, value: file.name, fileKey: key, fileName: file.name })
   }
 
-  const { error } = await admin.database
+  const { data: inserted, error } = await admin.database
     .from('cms_form_submissions')
     .insert([{ page_id: meta.pageId, form_name: meta.formName.slice(0, 120), data: values, client_token: token, ip_hash: ipHash }])
+    .select('id')
+    .single()
   if (error) {
     await Promise.all(uploaded.map((k) => admin.storage.from('form-uploads').remove(k).catch(() => undefined)))
     // Same token already stored (a retry raced the first attempt): that's a success.
     if (error.code === '23505') return { ok: true }
     console.error('[forms] insert failed', error)
     return { error: GENERIC_ERROR }
+  }
+
+  // Notification + thank-you emails go out after the visitor has their
+  // answer, so a slow or failing mail server never affects the form.
+  const submissionId = (inserted as { id: string }).id
+  const site = (await getSiteConfig().catch(() => null))?.site
+  if (site) {
+    after(() =>
+      sendFormEmails({ submissionId, formName: meta.formName, pageLabel: meta.pageLabel, values, site, allowThankYou: meta.thankYou }).catch((err) =>
+        console.error('[forms] sending emails failed', err)
+      )
+    )
   }
   return { ok: true }
 }
@@ -126,7 +143,7 @@ export async function submitFormAction(fd: FormData): Promise<Result> {
     if (!UUID.test(pageId) || !/^x[a-z0-9]{8}$/.test(nodeId)) return { error: 'This form is not available.' }
 
     const admin = createInsForgeAdminClient()
-    const { data: page, error } = await admin.database.from('cms_pages').select('id, status, scheduled_at, published_content').eq('id', pageId).maybeSingle()
+    const { data: page, error } = await admin.database.from('cms_pages').select('id, title, slug, status, scheduled_at, published_content').eq('id', pageId).maybeSingle()
     if (error) return { error: GENERIC_ERROR }
     const live =
       page &&
@@ -150,7 +167,13 @@ export async function submitFormAction(fd: FormData): Promise<Result> {
     }
     if (!form || (form as BuilderNode).type !== 'form') return { error: 'This form is not available.' }
     const formNode = form as BuilderNode
-    return await store(fd, (formNode.props.fields ?? []) as FieldDef[], { pageId, formName: String(formNode.props.formName || 'Form'), keyPrefix: pageId })
+    return await store(fd, (formNode.props.fields ?? []) as FieldDef[], {
+      pageId,
+      formName: String(formNode.props.formName || 'Form'),
+      keyPrefix: pageId,
+      pageLabel: `${page.title} page (/${page.slug})`,
+      thankYou: formNode.props.thankYouEmail !== false,
+    })
   } catch (err) {
     console.error('submitFormAction failed', err)
     return { error: GENERIC_ERROR }
@@ -174,7 +197,7 @@ const CONTACT_FIELDS: FieldDef[] = [
 
 export async function submitContactFormAction(fd: FormData): Promise<Result> {
   try {
-    return await store(fd, CONTACT_FIELDS, { pageId: null, formName: 'Contact PEARL', keyPrefix: 'contact' })
+    return await store(fd, CONTACT_FIELDS, { pageId: null, formName: 'Contact PEARL', keyPrefix: 'contact', pageLabel: 'Contact page (/contact)', thankYou: true })
   } catch (err) {
     console.error('submitContactFormAction failed', err)
     return { error: GENERIC_ERROR }

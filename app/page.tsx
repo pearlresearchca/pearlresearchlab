@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowUpRight, HeartPulse, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
+import { ArrowUpRight, HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
 import { ArrowLink, SectionHeading } from '@/components/site-shell'
 import { PageFrame } from '@/components/page-frame'
 import { Reveal } from '@/components/reveal'
@@ -8,7 +8,7 @@ import { PartnerLogoMarquee } from '@/components/partner-logos'
 import { getPageContent, getPartnersByContext, getResearchAreas, image, text } from '@/lib/cms/queries'
 import { livePageMetadata, renderLivePage } from '@/lib/builder/public'
 
-const ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network }
+const ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network, Landmark }
 
 export function generateMetadata() {
   return livePageMetadata({ legacyKey: 'home' })

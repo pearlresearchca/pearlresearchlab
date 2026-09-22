@@ -64,7 +64,7 @@ export default async function ResearchAdminPage() {
                   <TextArea id={`home_summary-${area.id}`} name="home_summary" rows={2} defaultValue={area.home_summary ?? ''} />
                 </Field>
                 <div className="flex flex-wrap items-start gap-4">
-                  <Field label="Icon name (lucide-react)" htmlFor={`icon-${area.id}`} hint="e.g. HeartPulse, Scale, Leaf, Network" className="min-w-48">
+                  <Field label="Icon name (lucide-react)" htmlFor={`icon-${area.id}`} hint="e.g. HeartPulse, Scale, Leaf, Network, Landmark" className="min-w-48">
                     <TextInput id={`icon-${area.id}`} name="icon_name" defaultValue={area.icon_name ?? ''} />
                   </Field>
                   <Field label="Sort order" htmlFor={`sort-${area.id}`}>

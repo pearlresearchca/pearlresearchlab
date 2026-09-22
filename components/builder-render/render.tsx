@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Clock, Mail, MapPin, Phone } from 'lucide-react'
 import type { BuilderNode, PageDoc } from '@/lib/builder/types'
 import { docCss, safeCssValue, safeUrl } from '@/lib/builder/styles'
 import { isEmbedUrl } from '@/lib/builder/blocks'
@@ -486,6 +486,27 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
       const address = p.useSite ? site.address : p.address
       const email = p.useSite ? site.contactEmail : p.email
       const phone = p.useSite ? site.phone : p.phone
+      if (p.layout === 'cards') {
+        const items = [
+          address && { icon: <MapPin />, label: 'Address', body: <span>{address}</span> },
+          p.hours && { icon: <Clock />, label: 'Hours', body: <span>{p.hours}</span> },
+          email && { icon: <Mail />, label: 'Email', body: <a href={`mailto:${email}`}>{email}</a> },
+          phone && { icon: <Phone />, label: 'Phone', body: <a href={`tel:${String(phone).replace(/[^\d+]/g, '')}`}>{phone}</a> },
+        ].filter(Boolean) as { icon: React.ReactNode; label: string; body: React.ReactNode }[]
+        return (
+          <ul {...baseAttrs(node, rc, 'pb-contact-cards')}>
+            {items.map((it) => (
+              <li key={it.label}>
+                <span className="pb-contact-cards-icon" aria-hidden="true">{it.icon}</span>
+                <span className="pb-contact-cards-text">
+                  <strong>{it.label}</strong>
+                  {it.body}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
+      }
       return (
         <div {...baseAttrs(node, rc, `pb-contact${p.layout === 'stack' ? ' pb-contact--stack' : ''}`)}>
           {address && (
@@ -518,7 +539,7 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
 
     case 'form':
       return (
-        <div {...baseAttrs(node, rc, 'pb-form-wrap')}>
+        <div {...baseAttrs(node, rc, p.appearance === 'card' ? 'pb-form-wrap pb-form-wrap--card' : 'pb-form-wrap')}>
           <FormBlock pageId={rc.pageId ?? ''} nodeId={node.id} props={p} preview={!!rc.editor} />
         </div>
       )

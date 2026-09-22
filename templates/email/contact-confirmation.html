@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<!--
+  Thank-you email sent to the person who submitted a website form.
+  Placeholders: {{name}} is HTML-escaped; {{{name}}} (three braces) is inserted as-is.
+    siteName, shortName, siteUrl, logoCell (HTML), preheader, firstName, formName,
+    submittedAt, summaryRows (HTML table rows), contactLines (HTML), year
+  Contact lines come from Admin → Site settings (address, contact email, phone).
+  Keep styles inline — most email apps ignore <style> blocks.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
+  <title>Thank you for contacting {{siteName}}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f1f5f4;-webkit-text-size-adjust:100%;">
+  <!-- Preview text shown in the inbox list -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f1f5f4;">{{preheader}}</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f4;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">
+
+          <!-- Brand -->
+          <tr>
+            <td style="padding:0 4px 20px 4px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  {{{logoCell}}}
+                  <td style="vertical-align:middle;font-family:Georgia,'Times New Roman',serif;">
+                    <div style="font-size:20px;letter-spacing:4px;color:#132d2c;font-weight:bold;">{{shortName}}</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#5b6b69;margin-top:2px;">{{siteName}}</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background-color:#ffffff;border-radius:18px;border:1px solid #dfe8e6;overflow:hidden;">
+              <!-- Hero band -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#146b68;background-image:linear-gradient(135deg,#146b68 0%,#0f4f4d 100%);padding:36px 36px 32px 36px;border-radius:18px 18px 0 0;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#d9b84d;font-weight:bold;">Message received</div>
+                    <h1 style="margin:10px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:30px;line-height:1.2;color:#ffffff;">Thank you for reaching out, {{firstName}}.</h1>
+                  </td>
+                </tr>
+              </table>
+
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:32px 36px 8px 36px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#334341;">
+                    <p style="margin:0 0 16px 0;">We’ve received your message and a member of the {{shortName}} team will read it carefully. We usually reply within <strong style="color:#132d2c;">3–5 business days</strong>.</p>
+                    <p style="margin:0 0 16px 0;">You don’t need to prepare anything else — if we need more details, we’ll ask when we get in touch using the contact method you chose.</p>
+                  </td>
+                </tr>
+
+                <!-- What happens next -->
+                <tr>
+                  <td style="padding:8px 36px 8px 36px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#eef4f2;border-radius:14px;">
+                      <tr>
+                        <td style="padding:20px 22px;font-family:Arial,Helvetica,sans-serif;">
+                          <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#146b68;font-weight:bold;margin-bottom:12px;">What happens next</div>
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="vertical-align:top;padding:0 12px 10px 0;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:11px;background-color:#146b68;color:#ffffff;font-size:12px;font-weight:bold;text-align:center;">1</span></td>
+                              <td style="vertical-align:top;padding:2px 0 10px 0;font-size:14px;color:#334341;">We review your message and share it with the right person on the team.</td>
+                            </tr>
+                            <tr>
+                              <td style="vertical-align:top;padding:0 12px 10px 0;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:11px;background-color:#146b68;color:#ffffff;font-size:12px;font-weight:bold;text-align:center;">2</span></td>
+                              <td style="vertical-align:top;padding:2px 0 10px 0;font-size:14px;color:#334341;">We contact you to learn more or to suggest a short conversation.</td>
+                            </tr>
+                            <tr>
+                              <td style="vertical-align:top;padding:0 12px 0 0;"><span style="display:inline-block;width:22px;height:22px;line-height:22px;border-radius:11px;background-color:#d9b84d;color:#132d2c;font-size:12px;font-weight:bold;text-align:center;">3</span></td>
+                              <td style="vertical-align:top;padding:2px 0 0 0;font-size:14px;color:#334341;">Together, we explore how community priorities and research can connect.</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <!-- Summary -->
+                <tr>
+                  <td style="padding:24px 36px 8px 36px;font-family:Arial,Helvetica,sans-serif;">
+                    <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#5b6b69;font-weight:bold;margin-bottom:10px;">A copy of your message</div>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #dfe8e6;border-radius:12px;border-collapse:separate;">
+                      {{{summaryRows}}}
+                    </table>
+                    <p style="margin:10px 0 0 0;font-size:12px;color:#7a8a88;">Sent {{submittedAt}} via the {{formName}} form.</p>
+                  </td>
+                </tr>
+
+                <!-- CTA -->
+                <tr>
+                  <td style="padding:24px 36px 36px 36px;font-family:Arial,Helvetica,sans-serif;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="border-radius:999px;background-color:#146b68;">
+                          <a href="{{siteUrl}}/research" style="display:inline-block;padding:13px 24px;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none;border-radius:999px;">Explore our research &rarr;</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 8px 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#6b7b79;text-align:center;">
+              <div style="font-weight:bold;color:#132d2c;">{{siteName}}</div>
+              {{{contactLines}}}
+              <div style="margin-top:12px;color:#8a9997;">You’re receiving this because you contacted us through <a href="{{siteUrl}}" style="color:#146b68;text-decoration:underline;">our website</a>. Simply reply to this email if you have anything to add.</div>
+              <div style="margin-top:8px;color:#a3b0ae;">&copy; {{year}} {{siteName}}</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

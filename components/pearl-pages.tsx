@@ -3,6 +3,28 @@ import { ProjectFeatureView, TeamCard, TeamGroup } from './site-views'
 import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
 import { Reveal } from './reveal'
+import {
+  Apple,
+  Building2,
+  Bus,
+  CircleCheck,
+  Clock,
+  Globe2,
+  Handshake,
+  HeartPulse,
+  House,
+  Lightbulb,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Scale,
+  Sparkles,
+  Sprout,
+  Stethoscope,
+  Users,
+  Venus,
+  type LucideIcon,
+} from 'lucide-react'
 import { richHtml } from '@/lib/cms/rich'
 import type { PageContentMap } from '@/lib/cms/types'
 import { PartnerLogoGrid, PartnerLogoRow } from './partner-logos'
@@ -237,29 +259,55 @@ export async function ContactPage() {
             <Reveal className="section-heading">
               <h2 id="interests-title">{text(content, 'interests_title')}</h2>
             </Reveal>
-            <Reveal delay={60}>
-              <ul className="interest-grid">
-                {interests.map((item) => <li key={item}>{item}</li>)}
-              </ul>
-              <p className="interest-note">{text(content, 'interests_note')}</p>
-            </Reveal>
+            <div className="interest-grid">
+              {interests.map((item, i) => {
+                const Icon = interestIcon(item)
+                return (
+                  <Reveal delay={(i % 3) * 70} className={`interest-card tone-${i % INTEREST_TONES}`} key={item}>
+                    <span className="interest-icon"><Icon aria-hidden="true" /></span>
+                    <span className="interest-index" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                    <p>{item}</p>
+                  </Reveal>
+                )
+              })}
+            </div>
+            {text(content, 'interests_note') && (
+              <Reveal className="interest-note">
+                <Lightbulb aria-hidden="true" />
+                <p>{text(content, 'interests_note')}</p>
+              </Reveal>
+            )}
           </div>
         </section>
 
-        <section className="connect-section">
+        <section className="connect-section" aria-labelledby="connect-title">
           <div className="site-container connect-grid">
-            <Reveal>
-              <h2>{text(content, 'connect_title')}</h2>
-              <p>{text(content, 'connect_lead')}</p>
+            <Reveal className="connect-card">
+              <span className="connect-card-icon"><Handshake aria-hidden="true" /></span>
+              <h2 id="connect-title">{text(content, 'connect_title')}</h2>
+              <p className="connect-lead">{text(content, 'connect_lead')}</p>
               <ul className="connect-list">
-                {connectItems.map((item) => <li key={item}>{item}</li>)}
+                {connectItems.map((item) => (
+                  <li key={item}>
+                    <CircleCheck aria-hidden="true" />
+                    <span>{item}</span>
+                  </li>
+                ))}
               </ul>
-              <p>{text(content, 'connect_note')}</p>
+              {text(content, 'connect_note') && <p className="connect-note">{text(content, 'connect_note')}</p>}
             </Reveal>
-            <Reveal delay={100}>
+            <Reveal delay={100} className="approach-card">
+              <span className="connect-card-icon"><Sprout aria-hidden="true" /></span>
               <h2>{text(content, 'approach_title')}</h2>
-              <RichBody content={content} field="approach_body" />
-              <p className="approach-note">{text(content, 'approach_note')}</p>
+              <div className="approach-body">
+                <RichBody content={content} field="approach_body" />
+              </div>
+              {text(content, 'approach_note') && (
+                <p className="approach-note">
+                  <MessageCircle aria-hidden="true" />
+                  <span>{text(content, 'approach_note')}</span>
+                </p>
+              )}
             </Reveal>
           </div>
         </section>
@@ -271,16 +319,40 @@ export async function ContactPage() {
                 <h2>{text(content, 'start_title')}</h2>
                 <RichBody content={content} field="start_body" />
               </div>
-              <div className="contact-details">
-                <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
-                <p><strong>Hours</strong><br />{text(content, 'hours')}</p>
-                {email && <p className="contact-email"><strong>Email</strong><br /><a href={`mailto:${email}`}>{email}</a></p>}
-              </div>
+              <ul className="contact-details">
+                {address.length > 0 && (
+                  <li>
+                    <span className="contact-detail-icon"><MapPin aria-hidden="true" /></span>
+                    <div>
+                      <strong>{address[0]}</strong>
+                      {address.slice(1).map((line) => <span key={line}>{line}</span>)}
+                    </div>
+                  </li>
+                )}
+                {text(content, 'hours') && (
+                  <li>
+                    <span className="contact-detail-icon"><Clock aria-hidden="true" /></span>
+                    <div>
+                      <strong>Hours</strong>
+                      <span>{text(content, 'hours')}</span>
+                    </div>
+                  </li>
+                )}
+                {email && (
+                  <li className="contact-email">
+                    <span className="contact-detail-icon"><Mail aria-hidden="true" /></span>
+                    <div>
+                      <strong>Email</strong>
+                      <a href={`mailto:${email}`}>{email}</a>
+                    </div>
+                  </li>
+                )}
+              </ul>
               <div className="contact-cta">
                 <a className="button button-primary" href="#send-a-message">{text(content, 'cta_label')}</a>
               </div>
             </Reveal>
-            <Reveal delay={100}>
+            <Reveal delay={100} className="contact-form-card">
               <div className="form-heading" id="send-a-message">
                 <h2>{text(content, 'form_title')}</h2>
                 <p>{text(content, 'form_intro')}</p>
@@ -296,6 +368,27 @@ export async function ContactPage() {
       </main>
     </PageFrame>
   )
+}
+
+// Areas of Interest cards cycle through this many colour tones (see .tone-N in globals.css).
+const INTEREST_TONES = 6
+
+// Items are editable text, so icons are matched on keywords with a neutral fallback.
+const INTEREST_ICONS: [RegExp, LucideIcon][] = [
+  [/food/i, Apple],
+  [/housing|poverty/i, House],
+  [/rural|transport/i, Bus],
+  [/workforce/i, Stethoscope],
+  [/immigrant|refugee|newcomer|raciali[sz]ed/i, Globe2],
+  [/women|gender/i, Venus],
+  [/system|policy|access to care/i, Building2],
+  [/equity|determinants/i, Scale],
+  [/community/i, Users],
+  [/health|well-being/i, HeartPulse],
+]
+
+function interestIcon(item: string): LucideIcon {
+  return INTEREST_ICONS.find(([re]) => re.test(item))?.[1] ?? Sparkles
 }
 
 // Formatted text from the rich text editor (sanitized). `display: contents`
