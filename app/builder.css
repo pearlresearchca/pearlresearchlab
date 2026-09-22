@@ -547,15 +547,11 @@ body:has(.admin-ui) { background: #f4f6fb; }
 .pc-interests .pb-rich li::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--tone); }
 .pc-interests .pb-rich li::before {
   content: counter(pc-interest, decimal-leading-zero); display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px;
-  background: var(--tone); color: #fff; font-family: var(--heading-font); font-size: 18px; line-height: 1; box-shadow: 0 8px 18px -10px var(--tone);
+  background: var(--tone); color: var(--tone-ink, #fff); font-family: var(--heading-font); font-size: 18px; line-height: 1; box-shadow: 0 8px 18px -10px var(--tone);
 }
 .pc-interests .pb-rich li > p { margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.45; color: var(--foreground); }
 .pc-interests .pb-rich li:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--tone) 45%, var(--border)); box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--tone) 70%, transparent); }
-.pc-interests .pb-rich li:nth-child(6n+2) { --tone: #b8860b; --tone-soft: #fbf3dc; }
-.pc-interests .pb-rich li:nth-child(6n+3) { --tone: #c2553d; --tone-soft: #fbe9e4; }
-.pc-interests .pb-rich li:nth-child(6n+4) { --tone: #3d5a98; --tone-soft: #e6ecf8; }
-.pc-interests .pb-rich li:nth-child(6n+5) { --tone: #4f8a3b; --tone-soft: #eaf4e3; }
-.pc-interests .pb-rich li:nth-child(6n+6) { --tone: #8a4a8c; --tone-soft: #f4e8f4; }
+.pc-interests .pb-rich li:nth-child(even) { --tone: #d9b84d; --tone-soft: #fbf4dd; --tone-ink: #0d4f4d; }
 .pc-interest-note.pb-text { max-width: 860px; padding: 20px 24px 20px 58px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-left: 4px solid var(--accent); border-radius: 14px; background: #fffaeb; color: var(--foreground); font-size: 15.5px; line-height: 1.65; position: relative; }
 .pc-interest-note.pb-text::before { content: "i"; position: absolute; left: 20px; top: 20px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font: italic 700 14px/1 Georgia, serif; }
 
