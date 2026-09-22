@@ -3,6 +3,17 @@
 import Link from 'next/link'
 import { useEffect } from 'react'
 import { SiteFooter, SiteHeader } from '@/components/site-shell'
+import { DEFAULT_HEADER, DEFAULT_NAVIGATION, defaultFooter, defaultSite } from '@/lib/builder/defaults'
+
+// The error boundary can't load settings from the database (that may be what
+// failed), so it renders the built-in default header and footer.
+const NAV = DEFAULT_NAVIGATION.items.map((i) => ({ id: i.id, label: i.label, href: i.url ?? '/' }))
+const SITE = defaultSite({ logoUrl: '/pearl/pearlresearchlab%20assets/image.png' })
+const FOOTER = defaultFooter({
+  blurb: 'Advancing public health equity through research, advocacy, and collaboration.',
+  tagline: 'Research for healthier, more equitable communities.',
+  copyright: '© 2026 PEARL Research Lab',
+})
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
@@ -11,7 +22,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
   return (
     <>
-      <SiteHeader logoUrl="/pearl/pearlresearchlab%20assets/image.png" />
+      <SiteHeader logoUrl={SITE.logoUrl ?? ''} nav={NAV} header={DEFAULT_HEADER} site={SITE} />
       <main>
         <section className="page-hero">
           <div className="site-container">
@@ -27,11 +38,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           </div>
         </section>
       </main>
-      <SiteFooter
-        blurb="Advancing public health equity through research, advocacy, and collaboration."
-        tagline="Research for healthier, more equitable communities."
-        copyright="© 2026 PEARL Research Lab"
-      />
+      <SiteFooter footer={FOOTER} nav={NAV} site={SITE} />
     </>
   )
 }

@@ -2,18 +2,20 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Inter } from 'next/font/google'
 import { PublicAnalytics } from '@/components/public-analytics'
+import { getSiteConfig } from '@/lib/builder/queries'
 import './globals.css'
+import './builder.css'
 
 const fraunces = Fraunces({
   subsets: ['latin'],
   style: ['normal', 'italic'],
-  variable: '--font-serif',
+  variable: '--font-fraunces',
   display: 'swap',
 })
 
 const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-sans',
+  variable: '--font-inter',
   display: 'swap',
 })
 
@@ -21,7 +23,7 @@ const siteUrl = 'https://pearlresearchlab.vercel.app'
 const siteName = 'PEARL | Public Health Equity Advocacy Research Lab'
 const siteDescription = 'PEARL advances public health equity through research, advocacy, and collaboration.'
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
     default: siteName,
@@ -75,6 +77,25 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   manifest: '/site.webmanifest',
+}
+
+// Default title/description/social image and favicon come from Site settings
+// (with the values above as fallbacks when nothing has been saved yet).
+export async function generateMetadata(): Promise<Metadata> {
+  const config = await getSiteConfig().catch(() => null)
+  if (!config) return baseMetadata
+  const site = config.site
+  const title = site.defaultSeoTitle || siteName
+  const description = site.defaultSeoDescription || siteDescription
+  const image = site.socialImage ? [{ url: site.socialImage }] : undefined
+  return {
+    ...baseMetadata,
+    title: { default: title, template: `%s | ${site.shortName || 'PEARL'}` },
+    description,
+    openGraph: { ...baseMetadata.openGraph, siteName: site.siteName || siteName, title, description, ...(image ? { images: image } : {}) },
+    twitter: { ...baseMetadata.twitter, title, description, ...(image ? { images: [site.socialImage!] } : {}) },
+    ...(site.faviconUrl ? { icons: { icon: [{ url: site.faviconUrl }], apple: site.faviconUrl } } : {}),
+  }
 }
 
 export const viewport: Viewport = {

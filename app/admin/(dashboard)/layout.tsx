@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen bg-background">
       <Toaster position="top-right" richColors closeButton />
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-surface/95 px-6 py-3.5 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-4 py-3.5 backdrop-blur sm:px-6">
         <Link href="/admin" className="flex items-center gap-2.5">
           <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold tracking-wide text-white">P</span>
           <span className="flex flex-col leading-none">
@@ -49,8 +49,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </div>
       </header>
 
-      <div className="mx-auto flex max-w-7xl gap-8 px-6 py-8">
-        <aside className="w-56 shrink-0">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 md:flex-row md:gap-8 md:py-8">
+        <aside className="shrink-0 md:w-56">
           <AdminSidebar role={role} sections={sections} />
         </aside>
         <main className="min-w-0 flex-1">{children}</main>

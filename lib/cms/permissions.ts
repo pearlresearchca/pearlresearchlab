@@ -1,4 +1,8 @@
 export const SECTIONS = [
+  { key: 'pages', label: 'Pages & page builder' },
+  { key: 'media', label: 'Media library' },
+  { key: 'design', label: 'Theme, navigation, header & footer' },
+  { key: 'seo', label: 'SEO (page titles, descriptions & URLs)' },
   { key: 'home', label: 'Home page' },
   { key: 'about', label: 'About page' },
   { key: 'research', label: 'Research areas' },
