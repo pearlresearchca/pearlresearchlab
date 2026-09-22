@@ -17,11 +17,11 @@ export function AdminCard({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+    <div className="rounded-2xl border border-border bg-surface p-6 shadow-[0_1px_2px_rgba(15,23,42,.04),0_4px_16px_-8px_rgba(15,23,42,.08)]">
       {(title || action) && (
-        <div className="flex items-start justify-between gap-4">
+        <div className="-mx-6 -mt-6 mb-5 flex items-start justify-between gap-4 border-b border-border px-6 py-4">
           <div className="flex items-start gap-3">
-            {icon && <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">{icon}</div>}
+            {icon && <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">{icon}</div>}
             <div>
               {title && <h2 className="text-base font-semibold text-foreground">{title}</h2>}
               {description && <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>}
@@ -31,7 +31,7 @@ export function AdminCard({
         </div>
       )}
       {!title && description && <p className="mb-4 text-sm text-muted-foreground">{description}</p>}
-      <div className={title || description ? 'mt-5' : ''}>{children}</div>
+      <div className={!title && description ? 'mt-5' : ''}>{children}</div>
     </div>
   )
 }
@@ -39,7 +39,7 @@ export function AdminCard({
 export function Field({ label, htmlFor, hint, children, className = '' }: { label: string; htmlFor?: string; hint?: string; children: ReactNode; className?: string }) {
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
+      <label htmlFor={htmlFor} className="text-[13px] font-semibold text-foreground">
         {label}
       </label>
       {children}
@@ -49,7 +49,7 @@ export function Field({ label, htmlFor, hint, children, className = '' }: { labe
 }
 
 const controlClass =
-  'w-full rounded-lg border border-border bg-background px-3.5 py-2.5 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground/70 focus:border-primary focus:ring-4 focus:ring-primary/10'
+  'w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/15'
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={`${controlClass} ${props.className ?? ''}`} />
@@ -71,10 +71,10 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
 
 export function SectionCheckboxes({ name = 'sections', defaultValue = [] }: { name?: string; defaultValue?: string[] }) {
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-lg border border-border bg-background p-3 sm:grid-cols-4">
+    <div className="grid gap-1 rounded-xl border border-border bg-background p-2 sm:grid-cols-2">
       {SECTIONS.map((s) => (
-        <label key={s.key} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-foreground hover:bg-muted">
-          <input type="checkbox" name={name} value={s.key} defaultChecked={defaultValue.includes(s.key)} className="size-4 accent-primary" />
+        <label key={s.key} className="flex cursor-pointer flex-row-reverse items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-surface">
+          <input type="checkbox" name={name} value={s.key} defaultChecked={defaultValue.includes(s.key)} className="switch" />
           {s.label}
         </label>
       ))}
@@ -97,7 +97,7 @@ export function RoleBadge({ role }: { role: 'admin' | 'editor' }) {
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-        role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+        role === 'admin' ? 'bg-primary/10 text-primary' : 'bg-emerald-50 text-emerald-700'
       }`}
     >
       {role === 'admin' ? 'Admin' : 'Editor'}
@@ -107,7 +107,7 @@ export function RoleBadge({ role }: { role: 'admin' | 'editor' }) {
 
 export function EmptyState({ title, body }: { title: string; body?: string }) {
   return (
-    <div className="rounded-lg border border-dashed border-border bg-background/60 px-6 py-10 text-center">
+    <div className="rounded-2xl border border-dashed border-border bg-background/60 px-6 py-12 text-center">
       <p className="text-sm font-medium text-foreground">{title}</p>
       {body && <p className="mt-1 text-sm text-muted-foreground">{body}</p>}
     </div>

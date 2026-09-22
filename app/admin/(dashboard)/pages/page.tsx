@@ -1,4 +1,5 @@
 import { FileStack } from 'lucide-react'
+import { PageHeader } from '@/components/admin/page-header'
 import { NoSectionAccess } from '@/components/admin/no-access'
 import { PagesManager } from '@/components/builder/pages-manager'
 import { SITE_URL, hasAny, requireAdmin } from '@/lib/builder/admin-data'
@@ -27,16 +28,8 @@ export default async function PagesAdminPage({ searchParams }: { searchParams: P
   const imported = new Set(pages.map((p) => p.legacy_key).filter(Boolean))
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <FileStack className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Pages</h1>
-          <p className="text-sm text-muted-foreground">Create, design and publish the pages of your website.</p>
-        </div>
-      </div>
+    <div className="flex flex-col">
+      <PageHeader group="Website" title={'Pages'} description={'Create, design and publish the pages of your website.'} icon={<FileStack />} />
       <PagesManager
         pages={pages.map((p) => ({
           ...p,

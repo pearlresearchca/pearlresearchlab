@@ -46,6 +46,8 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
       siteUrl={SITE_URL}
       canPublish={canEdit}
       seoOnly={seoOnly}
+      canDesign={hasAny(admin.profile, ['design'])}
+
       {...ctx}
     />
   )

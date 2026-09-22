@@ -1,12 +1,13 @@
 import { cache } from 'react'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
+import { unwrap } from '@/lib/cms/data-error'
 import { getAboutValues, getPageContent, getPartnersByContext, getProjectSections, getProjects, getResearchAreas, getTeamMembers, text } from '@/lib/cms/queries'
 import type { RenderData } from '@/components/builder-render/context'
 import { mergeTheme } from './theme'
 import { DEFAULT_HEADER, DEFAULT_NAVIGATION, defaultFooter, defaultSite } from './defaults'
 import { BLOCKS } from './blocks'
-import { normalizeDoc, walk } from './tree'
+import { normalizeDoc, normalizeNode, walk } from './tree'
 import type {
   BuilderNode,
   CmsPage,
@@ -30,17 +31,19 @@ export type SiteConfig = {
   footer: FooterSettings
   site: SiteSettings
   updatedAt: Record<string, string | undefined>
+  versions: Record<string, number>
 }
 
 // All global settings in one query, deduplicated per request.
 export const getSiteConfig = cache(async (): Promise<SiteConfig> => {
   const insforge = await createInsForgeServerClient()
-  const [{ data }, legacy] = await Promise.all([
-    insforge.database.from('cms_settings').select('key, value, updated_at'),
+  const [settingsResult, legacy] = await Promise.all([
+    insforge.database.from('cms_settings').select('key, value, updated_at, version'),
     getPageContent('global'),
   ])
-  const rows = new Map<string, { value: any; updated_at: string }>()
-  for (const r of (data ?? []) as { key: string; value: any; updated_at: string }[]) rows.set(r.key, r)
+  const data = unwrap(settingsResult, 'getSiteConfig')
+  const rows = new Map<string, { value: any; updated_at: string; version: number }>()
+  for (const r of (data ?? []) as { key: string; value: any; updated_at: string; version: number }[]) rows.set(r.key, r)
 
   const footerDefaults = defaultFooter({
     blurb: text(legacy, 'footer_blurb'),
@@ -57,6 +60,8 @@ export const getSiteConfig = cache(async (): Promise<SiteConfig> => {
     footer: { ...footerDefaults, ...(rows.get('footer')?.value ?? {}) },
     site: { ...siteDefaults, ...(rows.get('site')?.value ?? {}) },
     updatedAt: Object.fromEntries([...rows.entries()].map(([k, v]) => [k, v.updated_at])),
+    // Optimistic-concurrency tokens for the settings editors (0 = not saved yet).
+    versions: Object.fromEntries(['theme', 'navigation', 'header', 'footer', 'site'].map((k) => [k, rows.get(k)?.version ?? 0])),
   }
 })
 
@@ -76,7 +81,7 @@ export async function getLivePage(match: { slug: string } | { legacyKey: string 
     .from('cms_pages')
     .select('id, title, slug, status, legacy_key, published_content, seo, featured_image, scheduled_at, published_at, updated_at')
   q = 'slug' in match ? q.eq('slug', match.slug) : q.eq('legacy_key', match.legacyKey)
-  const { data } = await q.maybeSingle()
+  const data = unwrap(await q.maybeSingle(), 'getLivePage')
   const page = data as (Pick<CmsPage, 'id' | 'title' | 'slug' | 'status' | 'legacy_key' | 'published_content' | 'seo' | 'featured_image' | 'scheduled_at' | 'published_at' | 'updated_at'>) | null
   if (!page || !page.published_content) return null
   if (isLive(page)) return page
@@ -89,19 +94,19 @@ export async function getLivePage(match: { slug: string } | { legacyKey: string 
 
 export async function getRedirect(path: string): Promise<string | null> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_redirects').select('to_path').eq('from_path', path).maybeSingle()
+  const data = unwrap(await insforge.database.from('cms_redirects').select('to_path').eq('from_path', path).maybeSingle(), 'getRedirect')
   return (data as { to_path: string } | null)?.to_path ?? null
 }
 
 export const getPageSlugs = cache(async (): Promise<Record<string, string>> => {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_pages').select('id, slug').limit(1000)
+  const data = unwrap(await insforge.database.from('cms_pages').select('id, slug').limit(1000), 'getPageSlugs')
   return Object.fromEntries(((data ?? []) as { id: string; slug: string }[]).map((p) => [p.id, p.slug]))
 })
 
 export async function listLivePagesForSitemap() {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_pages').select('slug, status, scheduled_at, updated_at, legacy_key, seo').in('status', ['published', 'scheduled']).limit(1000)
+  const data = unwrap(await insforge.database.from('cms_pages').select('slug, status, scheduled_at, updated_at, legacy_key, seo').in('status', ['published', 'scheduled']).limit(1000), 'listLivePagesForSitemap')
   return ((data ?? []) as Pick<CmsPage, 'slug' | 'status' | 'scheduled_at' | 'updated_at' | 'legacy_key' | 'seo'>[]).filter((p) => isLive(p) && !p.seo?.noIndex)
 }
 
@@ -111,13 +116,13 @@ export async function listLivePagesForSitemap() {
 
 export async function listPages(): Promise<CmsPageSummary[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_pages').select(PAGE_SUMMARY_COLUMNS).order('updated_at', { ascending: false }).limit(500)
+  const data = unwrap(await insforge.database.from('cms_pages').select(PAGE_SUMMARY_COLUMNS).order('updated_at', { ascending: false }).limit(500), 'listPages')
   return (data ?? []) as CmsPageSummary[]
 }
 
 export async function getPageById(id: string): Promise<CmsPage | null> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_pages').select('*').eq('id', id).maybeSingle()
+  const data = unwrap(await insforge.database.from('cms_pages').select('*').eq('id', id).maybeSingle(), 'getPageById')
   if (!data) return null
   const page = data as CmsPage
   return { ...page, content: normalizeDoc(page.content), seo: page.seo ?? {} }
@@ -125,36 +130,36 @@ export async function getPageById(id: string): Promise<CmsPage | null> {
 
 export async function listRevisions(pageId: string): Promise<PageRevision[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('cms_page_revisions')
     .select('id, page_id, title, content, seo, reason, created_at, created_by_email')
     .eq('page_id', pageId)
     .order('created_at', { ascending: false })
-    .limit(40)
-  return (data ?? []) as PageRevision[]
+    .limit(40), 'listRevisions')
+  return ((data ?? []) as PageRevision[]).map((r) => ({ ...r, content: normalizeDoc(r.content) }))
 }
 
 export async function listTemplates(): Promise<PageTemplateRow[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_templates').select('id, name, description, content, updated_at').order('updated_at', { ascending: false }).limit(100)
+  const data = unwrap(await insforge.database.from('cms_templates').select('id, name, description, content, updated_at').order('updated_at', { ascending: false }).limit(100), 'listTemplates')
   return (data ?? []) as PageTemplateRow[]
 }
 
 export async function listReusableBlocks(): Promise<ReusableBlock[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_blocks').select('id, name, block, is_global, updated_at').order('updated_at', { ascending: false }).limit(200)
+  const data = unwrap(await insforge.database.from('cms_blocks').select('id, name, block, is_global, updated_at, version').order('updated_at', { ascending: false }).limit(200), 'listReusableBlocks')
   return (data ?? []) as ReusableBlock[]
 }
 
 export async function getReusableBlock(id: string): Promise<ReusableBlock | null> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_blocks').select('id, name, block, is_global, updated_at').eq('id', id).maybeSingle()
+  const data = unwrap(await insforge.database.from('cms_blocks').select('id, name, block, is_global, updated_at, version').eq('id', id).maybeSingle(), 'getReusableBlock')
   return (data as ReusableBlock) ?? null
 }
 
 export async function listMedia(): Promise<MediaItem[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('cms_media').select('*').order('created_at', { ascending: false }).limit(1000)
+  const data = unwrap(await insforge.database.from('cms_media').select('*').order('created_at', { ascending: false }).limit(1000), 'listMedia')
   return (data ?? []) as MediaItem[]
 }
 
@@ -191,10 +196,12 @@ export async function loadRenderData(docs: PageDoc[], opts: { everything?: boole
   if (first.globalIds.size > 0 || opts.everything) {
     let q = insforge.database.from('cms_blocks').select('id, name, block').eq('is_global', true)
     if (!opts.everything) q = q.in('id', [...first.globalIds])
-    const { data } = await q.limit(200)
+    const data = unwrap(await q.limit(200), 'globalBlocks')
     for (const b of (data ?? []) as { id: string; name: string; block: BuilderNode }[]) {
-      globalBlocks[b.id] = { name: b.name, block: b.block }
-      sections = [...sections, b.block]
+      const block = normalizeNode(b.block)
+      if (!block) continue
+      globalBlocks[b.id] = { name: b.name, block }
+      sections = [...sections, block]
     }
   }
   const { needs, partnerContexts, fonts } = opts.everything || first.globalIds.size > 0 ? collectNeeds(sections) : first

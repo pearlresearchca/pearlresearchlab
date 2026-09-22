@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { useRouter } from 'next/navigation'
 import { toast, Toaster } from 'sonner'
 import {
-  ArrowLeft, ChevronDown, Cloud, CloudOff, Eye, History, LayoutTemplate, Layers as LayersIcon, Monitor, MoreHorizontal, Plus,
+  ArrowLeft, ChevronDown, Cloud, CloudOff, ExternalLink, Eye, EyeOff, Palette as PaletteIcon, Save, History, LayoutTemplate, Layers as LayersIcon, Monitor, MoreHorizontal, Plus,
   Redo2, RefreshCw, Settings2, Smartphone, Tablet, Undo2,
 } from 'lucide-react'
 import type { RenderData } from '@/components/builder-render/context'
 import {
-  deleteReusableBlockAction, getPageStateAction, publishPageAction, reimportLegacyPageAction, saveReusableBlockAction, savePageDraftAction, saveTemplateAction,
+  deleteReusableBlockAction, getPageStateAction, publishPageAction, reimportLegacyPageAction, saveReusableBlockAction, savePageDraftAction, saveSettingAction, saveTemplateAction,
   unpublishPageAction, updateReusableBlockAction,
 } from '@/lib/builder/actions'
 import { BLOCKS, makeNode } from '@/lib/builder/blocks'
@@ -23,6 +23,8 @@ import { HistoryDialog, PageSettingsDialog, PublishDialog, type PageMeta } from 
 import { Layers, Palette, resolveInsert, type InsertTarget } from './panels'
 import { copyToClipboard, initState, readClipboard, reducer, setProp, setStyle } from './store'
 import { TemplatePicker } from './template-picker'
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from './menu'
+import { THEME_PRESETS, applyPreset } from '@/lib/builder/theme-presets'
 import { Btn, ConfirmProvider, Dialog, FieldRow, IconBtn, Segmented, Spinner, StatusBadge, Toggle, cx, inputClass, useConfirm } from './ui'
 
 type SaveState = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict'
@@ -30,7 +32,7 @@ type SaveState = 'saved' | 'dirty' | 'saving' | 'error' | 'conflict'
 export type BuilderProps = {
   mode: 'page' | 'block'
   page?: PageMeta & { version: number; updated_at: string }
-  block?: { id: string; name: string; is_global: boolean; updated_at: string; wrapped: boolean }
+  block?: { id: string; name: string; is_global: boolean; updated_at: string; wrapped: boolean; version: number }
   initialDoc: PageDoc
   data: RenderData
   theme: ThemeSettings
@@ -40,6 +42,9 @@ export type BuilderProps = {
   siteUrl: string
   canPublish: boolean
   seoOnly: boolean
+  // Theme quick-switch (needs the Theme permission).
+  canDesign?: boolean
+  themeVersion?: number
 }
 
 const AUTOSAVE_MS = 2500
@@ -65,13 +70,16 @@ export function Builder(props: BuilderProps) {
   )
 }
 
-function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initialData, theme, savedBlocks: initialSaved, templates, siteUrl, canPublish, seoOnly }: BuilderProps) {
+function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initialData, theme: initialTheme, savedBlocks: initialSaved, templates, siteUrl, canPublish, seoOnly, canDesign = false, themeVersion = 0 }: BuilderProps) {
   const router = useRouter()
   const confirm = useConfirm()
   const [state, dispatch] = useReducer(reducer, initialDoc, initState)
   const [data, setData] = useState(initialData)
+  const [theme, setTheme] = useState(initialTheme)
+  const themeVersionRef = useRef(themeVersion)
   const [page, setPage] = useState(initialPage)
-  const version = useRef(initialPage?.version ?? 0)
+  const version = useRef(initialPage?.version ?? block?.version ?? 0)
+  const [backupFailed, setBackupFailed] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>('saved')
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const savedRevision = useRef(0)
@@ -82,8 +90,9 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
   const [dialog, setDialog] = useState<null | 'settings' | 'seo' | 'history' | 'publish' | 'template' | 'reusable' | 'conflict' | 'templates' | 'backup'>(null)
   const [reusableNode, setReusableNode] = useState<BuilderNode | null>(null)
   const [publishing, setPublishing] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [backup, setBackup] = useState<{ doc: PageDoc; at: number } | null>(null)
+  // Rich text toolbars dock here, above the canvas.
+  const [toolbarSlot, setToolbarSlot] = useState<HTMLDivElement | null>(null)
   const id = mode === 'page' ? page!.id : block!.id
   const { doc, selectedId, device } = state
   const selected = selectedId ? findNode(doc, selectedId) : null
@@ -106,8 +115,14 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
           const root = current.doc.sections[0]
           const node = block!.wrapped ? root?.children?.[0] : root
           if (!node) throw new Error('A reusable block can’t be empty.')
-          const res = await updateReusableBlockAction(block!.id, { block: node })
+          const res = await updateReusableBlockAction(block!.id, { block: node }, version.current)
           if ('error' in res) throw new Error(res.error)
+          if (res.conflict) {
+            setSaveState('conflict')
+            toast.error('Someone else changed this block while you were editing. Your changes are kept on this device — reload to see theirs.')
+            return false
+          }
+          version.current = res.version
         } else {
           const res = await savePageDraftAction(page!.id, current.doc, version.current, reason)
           if ('error' in res) throw new Error(res.error)
@@ -146,7 +161,14 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
     setSaveState((s) => (s === 'conflict' ? s : 'dirty'))
     try {
       localStorage.setItem(backupKey(id), JSON.stringify({ doc: state.doc, at: Date.now() }))
-    } catch {}
+      if (backupFailed) setBackupFailed(false)
+    } catch {
+      // Storage full or blocked: say so, since we promise a local copy.
+      if (!backupFailed) {
+        setBackupFailed(true)
+        toast.warning('This browser can’t keep a backup copy of your changes (storage is full or blocked). Save often.')
+      }
+    }
     if (saveState === 'conflict') return
     const t = setTimeout(() => save('autosave'), AUTOSAVE_MS)
     return () => clearTimeout(t)
@@ -316,7 +338,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
   }
 
   const saveLabel =
-    saveState === 'saving' ? 'Saving…' : saveState === 'dirty' ? 'Unsaved changes' : saveState === 'error' ? 'Save failed — kept on this device' : saveState === 'conflict' ? 'Updated elsewhere' : lastSaved ? `Saved ${Math.max(0, Math.round((Date.now() - lastSaved.getTime()) / 1000)) < 10 ? 'just now' : lastSaved.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'All changes saved'
+    saveState === 'saving' ? 'Saving…' : saveState === 'dirty' ? 'Unsaved changes' : saveState === 'error' ? (backupFailed ? 'Save failed — not backed up, retry' : 'Save failed — kept on this device') : saveState === 'conflict' ? 'Updated elsewhere' : lastSaved ? `Saved ${Math.max(0, Math.round((Date.now() - lastSaved.getTime()) / 1000)) < 10 ? 'just now' : lastSaved.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}` : 'All changes saved'
   const SaveIcon = saveState === 'error' || saveState === 'conflict' ? CloudOff : Cloud
 
   const emptyState = (
@@ -336,7 +358,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
   const title = mode === 'page' ? page!.title : block!.name
 
   return (
-    <div className="pb-builder-root flex h-dvh flex-col bg-background font-sans text-foreground">
+    <div className="admin-ui pb-builder-root flex h-dvh flex-col bg-background text-foreground">
       {/* ------------------------------------------------------------ top bar */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border bg-surface px-2 sm:px-3">
         <Btn variant="ghost" size="sm" onClick={() => leave(mode === 'page' ? '/admin/pages' : '/admin/blocks')} aria-label={mode === 'page' ? 'Back to pages' : 'Back to reusable blocks'}>
@@ -373,35 +395,69 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
               ]}
             />
           </div>
+          {canDesign && (
+            <Menu
+              label="Website theme"
+              width={300}
+              trigger={(t) => (
+                <button type="button" {...t} className="hidden items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-muted md:inline-flex" aria-label="Change website theme">
+                  <PaletteIcon className="size-4" /> Theme
+                </button>
+              )}
+            >
+              <MenuLabel>Website colour theme</MenuLabel>
+              <p className="px-2.5 pb-2 text-[11px] text-slate-500">Applies to every page on the site right away.</p>
+              {THEME_PRESETS.map((p) => (
+                <MenuItem
+                  key={p.key}
+                  icon={<span className="flex gap-0.5">{[p.colors.primary, p.colors.accent, p.colors.tint].map((c, i) => <span key={i} className="size-3 rounded-full border border-black/10" style={{ background: c }} />)}</span>}
+                  onSelect={async () => {
+                    if (!(await confirm({ title: `Switch the website to “${p.name}”?`, body: 'Colours, fonts and button shapes change on every page of the live website. You can switch back any time under Theme.', confirmLabel: 'Apply theme' }))) return
+                    const next = applyPreset(theme, p, true)
+                    const r = await saveSettingAction('theme', next, themeVersionRef.current)
+                    if ('error' in r) return toast.error(r.error)
+                    themeVersionRef.current = r.version
+                    setTheme(next)
+                    toast.success(`Theme “${p.name}” applied to the website`)
+                  }}
+                >
+                  {p.name}
+                </MenuItem>
+              ))}
+              <MenuSeparator />
+              <MenuItem href="/admin/theme" icon={<Settings2 />}>Customise theme…</MenuItem>
+            </Menu>
+          )}
           {mode === 'page' && (
             <>
               <IconBtn label="Version history" onClick={() => setDialog('history')}><History /></IconBtn>
               <IconBtn label="Page settings & SEO" onClick={() => setDialog(seoOnly ? 'seo' : 'settings')}><Settings2 /></IconBtn>
-              <span className="relative">
-                <IconBtn label="More actions" onClick={() => setMenuOpen(!menuOpen)} aria-expanded={menuOpen}><MoreHorizontal /></IconBtn>
-                {menuOpen && (
-                  <div className="absolute right-0 top-full z-50 mt-1 flex w-56 flex-col rounded-lg border border-border bg-surface p-1 text-sm shadow-xl" role="menu" onMouseLeave={() => setMenuOpen(false)}>
-                    {[
-                      ['Apply a template…', () => setDialog('templates')],
-                      ['Save page as template…', () => setDialog('template')],
-                      ['Open live page', () => window.open('/' + page!.slug, '_blank', 'noopener')],
-                      ...(page!.legacy_key ? [['Re-import from original page', async () => {
-                        if (!(await confirm({ title: 'Re-import from the original page?', body: 'Your current draft will be replaced with the latest content from the classic editor. The current draft stays in version history.', confirmLabel: 'Re-import' }))) return
-                        const r = await reimportLegacyPageAction(page!.id)
-                        if ('error' in r) return toast.error(r.error)
-                        version.current = r.version
-                        dispatch({ type: 'set-doc', doc: r.doc })
-                        toast.success('Re-imported')
-                      }] as const] : []),
-                      ...(page!.status === 'published' || page!.status === 'scheduled' || page!.status === 'private' ? [['Unpublish', unpublish] as const] : []),
-                    ].map(([label, fn]) => (
-                      <button key={label as string} type="button" role="menuitem" className="rounded px-2.5 py-1.5 text-left hover:bg-muted" onClick={() => { setMenuOpen(false); (fn as () => void)() }}>
-                        {label as string}
-                      </button>
-                    ))}
-                  </div>
+              <Menu label="More page actions" width={250} trigger={(t) => <IconBtn label="More actions" {...t}><MoreHorizontal /></IconBtn>}>
+                <MenuItem icon={<LayoutTemplate />} onSelect={() => setDialog('templates')}>Apply a template…</MenuItem>
+                <MenuItem icon={<Save />} onSelect={() => setDialog('template')}>Save page as template…</MenuItem>
+                <MenuItem icon={<ExternalLink />} href={'/' + page!.slug} external>Open live page</MenuItem>
+                {page!.legacy_key && (
+                  <MenuItem
+                    icon={<RefreshCw />}
+                    onSelect={async () => {
+                      if (!(await confirm({ title: 'Re-import from the original page?', body: 'Your current draft will be replaced with the latest content from the classic editor. The current draft stays in version history.', confirmLabel: 'Re-import' }))) return
+                      const r = await reimportLegacyPageAction(page!.id)
+                      if ('error' in r) return toast.error(r.error)
+                      version.current = r.version
+                      dispatch({ type: 'set-doc', doc: r.doc })
+                      toast.success('Re-imported')
+                    }}
+                  >
+                    Re-import from original page
+                  </MenuItem>
                 )}
-              </span>
+                {(page!.status === 'published' || page!.status === 'scheduled' || page!.status === 'private') && (
+                  <>
+                    <MenuSeparator />
+                    <MenuItem danger icon={<EyeOff />} onSelect={unpublish}>Unpublish</MenuItem>
+                  </>
+                )}
+              </Menu>
               <Btn size="sm" onClick={preview} className="hidden sm:inline-flex"><Eye className="size-4" /> Preview</Btn>
             </>
           )}
@@ -445,8 +501,11 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
           </div>
         </aside>
 
-        <main className="min-w-0 flex-1" aria-label="Page canvas">
+        <main className="flex min-w-0 flex-1 flex-col" aria-label="Page canvas">
+          <div ref={setToolbarSlot} className="z-20 shrink-0 border-b border-border bg-surface px-3 py-2 shadow-sm empty:hidden [&>div]:mx-auto [&>div]:max-w-5xl" aria-label="Text formatting" />
+          <div className="min-h-0 flex-1">
           <Canvas
+            toolbarSlot={toolbarSlot}
             state={state}
             dispatch={dispatch}
             data={data}
@@ -463,6 +522,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
             }}
             empty={mode === 'page' ? emptyState : undefined}
           />
+          </div>
         </main>
 
         <aside className="hidden w-80 shrink-0 border-l border-border bg-surface lg:block" aria-label="Block settings">
@@ -478,6 +538,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
               onStyle={(d, patch) => dispatch(setStyle(selected.id, d, patch))}
               onNode={(fn, key) => dispatch({ type: 'update-node', id: selected.id, fn, key })}
               globalName={selected.type === 'global' ? globalNames[selected.props.blockId] : undefined}
+              editingId={state.editingId}
               onEditGlobal={(bid) => leave(`/admin/builder/block/${bid}`)}
             />
           ) : (

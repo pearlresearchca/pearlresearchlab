@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e3eef0"/>
+      <stop offset="1" stop-color="#c9dde2"/>
+    </linearGradient>
+    <linearGradient id="hill1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fb7bc"/>
+      <stop offset="1" stop-color="#6c9ba1"/>
+    </linearGradient>
+    <linearGradient id="hill2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5f8d94"/>
+      <stop offset="1" stop-color="#3f6f77"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <circle cx="880" cy="230" r="80" fill="#f4d58d" opacity=".9"/>
+  <path d="M0 560 L260 360 L470 520 L690 330 L1200 620 L1200 800 L0 800 Z" fill="url(#hill1)"/>
+  <path d="M0 660 L330 470 L560 640 L820 500 L1200 700 L1200 800 L0 800 Z" fill="url(#hill2)"/>
+  <g font-family="Inter, Arial, sans-serif" text-anchor="middle" fill="#ffffff">
+    <text x="600" y="742" font-size="30" font-weight="600" opacity=".9">Your image here</text>
+  </g>
+</svg>

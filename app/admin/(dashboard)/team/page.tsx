@@ -51,7 +51,7 @@ function MemberCard({ member, users }: { member: TeamMember; users: UserDirector
               <TextInput id={`sort-${member.id}`} name="sort_order" type="number" defaultValue={member.sort_order} className="w-24" />
             </Field>
             <label className="flex items-center gap-2 pb-2.5 text-sm text-foreground">
-              <input type="checkbox" name="active" defaultChecked={member.active} className="size-4 accent-primary" />
+              <input type="checkbox" name="active" defaultChecked={member.active} className="switch" />
               Visible on site
             </label>
           </div>

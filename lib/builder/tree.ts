@@ -182,9 +182,29 @@ export function countNodes(doc: PageDoc): number {
   return n
 }
 
+const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v)
+
+// Repairs or drops malformed nodes so bad data (e.g. written directly through
+// the API) can never crash a render: every node needs a string id and type,
+// props must be an object, children an array of valid nodes.
+export function normalizeNode(value: unknown, depth = 0): BuilderNode | null {
+  if (!isObj(value) || depth > 30) return null
+  // Ids become CSS class names (.n-<id>), so only safe characters are allowed.
+  if (typeof value.id !== 'string' || !/^[A-Za-z0-9_-]{1,40}$/.test(value.id) || typeof value.type !== 'string' || !/^[a-z0-9-]{1,40}$/.test(value.type)) return null
+  const node: BuilderNode = { id: value.id, type: value.type, props: isObj(value.props) ? value.props : {} }
+  if (isObj(value.style)) node.style = value.style
+  if (isObj(value.advanced)) node.advanced = value.advanced
+  if (isObj(value.animation)) node.animation = value.animation
+  if (value.hidden === true) node.hidden = true
+  if (value.children !== undefined) {
+    node.children = Array.isArray(value.children) ? value.children.map((c) => normalizeNode(c, depth + 1)).filter((c): c is BuilderNode => c !== null) : []
+  }
+  return node
+}
+
 export function normalizeDoc(value: unknown): PageDoc {
-  if (value && typeof value === 'object' && Array.isArray((value as PageDoc).sections)) {
-    return { version: 1, sections: (value as PageDoc).sections }
+  if (isObj(value) && Array.isArray(value.sections)) {
+    return { version: 1, sections: value.sections.map((s) => normalizeNode(s)).filter((s): s is BuilderNode => s !== null) }
   }
   return { version: 1, sections: [] }
 }

@@ -270,7 +270,7 @@ export const BLOCK_LIST: BlockDef[] = [
       { key: 'lazy', label: 'Load when scrolled into view', type: 'toggle', advanced: true, hint: 'Turn off for images at the very top of the page.' },
     ],
     styleGroups: ['spacing', 'size', 'border', 'shadow', 'position', 'visibility', 'animation'],
-    create: () => ({ type: 'image', props: { src: '', alt: '', caption: '', aspect: 'auto', fit: 'cover', focus: 'center', lazy: true } }),
+    create: () => ({ type: 'image', props: { src: '', alt: '', caption: '', aspect: '16/9', fit: 'cover', focus: 'center', lazy: true } }),
   },
   {
     type: 'button',

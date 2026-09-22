@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { submitContactFormAction } from '@/lib/builder/form-actions'
 import { ArrowUpRight } from 'lucide-react'
 
 const CONNECTION_TYPES = [
@@ -48,6 +49,11 @@ export function ContactForm({
   confirmationBody: string
 }) {
   const [submitted, setSubmitted] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // One token per form fill: if the network drops after the server saved the
+  // message, resending the same fill is recognised and not stored twice.
+  const [token] = useState(() => crypto.randomUUID())
   const confirmationRef = useRef<HTMLDivElement>(null)
 
   if (submitted) {
@@ -62,12 +68,37 @@ export function ContactForm({
   return (
     <form
       className="contact-form"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault()
-        setSubmitted(true)
-        requestAnimationFrame(() => confirmationRef.current?.focus())
+        if (sending) return
+        setError(null)
+        setSending(true)
+        const fd = new FormData(e.currentTarget)
+        // Field names are prefixed to match the server-side definition.
+        const payload = new FormData()
+        fd.forEach((value, key) => payload.set(key.startsWith('__') ? key : `f_${key}`, value))
+        payload.set('__token', token)
+        try {
+          const result = await submitContactFormAction(payload)
+          if ('error' in result) {
+            setError(result.error)
+            return
+          }
+          setSubmitted(true)
+          requestAnimationFrame(() => confirmationRef.current?.focus())
+        } catch {
+          setError('Your message could not be sent. Please check your connection and try again.')
+        } finally {
+          setSending(false)
+        }
       }}
     >
+      <div className="pb-hp" aria-hidden="true">
+        <label>
+          Leave this empty
+          <input type="text" name="__website" tabIndex={-1} autoComplete="off" />
+        </label>
+      </div>
       <label htmlFor="cf-name">Name<Required /></label>
       <input id="cf-name" name="name" required autoComplete="name" />
 
@@ -120,7 +151,11 @@ export function ContactForm({
 
       {notice && <p className="sensitive-notice">{notice}</p>}
 
-      <button className="button button-primary" type="submit">Send message <ArrowUpRight aria-hidden="true" /></button>
+      {error && <p className="form-error" role="alert" style={{ color: '#b42318', fontSize: 14, margin: '8px 0 0' }}>{error}</p>}
+
+      <button className="button button-primary" type="submit" disabled={sending} aria-busy={sending}>
+        {sending ? 'Sending…' : 'Send message'} <ArrowUpRight aria-hidden="true" />
+      </button>
     </form>
   )
 }

@@ -11,15 +11,40 @@ import type { RenderContext } from './context'
 
 const SAFE_TOKEN = /^[A-Za-z0-9_ -]*$/
 
+// Shown in the builder where an image hasn't been chosen yet, so editors can
+// see the layout (and resize it) before uploading anything.
+function ImagePlaceholder({ onPick, compact = false, label }: { onPick?: () => void; compact?: boolean; label?: string }) {
+  return (
+    <div className={`pb-img-placeholder${compact ? ' pb-img-placeholder--compact' : ''}`}>
+      <svg viewBox="0 0 64 48" width={compact ? 40 : 64} height={compact ? 30 : 48} aria-hidden="true">
+        <rect x="1" y="1" width="62" height="46" rx="6" fill="none" stroke="currentColor" strokeWidth="2" opacity=".5" />
+        <circle cx="20" cy="16" r="5" fill="currentColor" opacity=".55" />
+        <path d="M6 42l16-16 10 10 8-8 18 14z" fill="currentColor" opacity=".45" />
+      </svg>
+      {!compact && <span className="pb-img-placeholder-title">Image placeholder</span>}
+      {label && <span className="pb-img-placeholder-hint">{label}</span>}
+      {onPick && (
+        <button type="button" className="pb-img-placeholder-btn" onClick={(e) => (e.stopPropagation(), onPick())}>
+          Choose image
+        </button>
+      )}
+    </div>
+  )
+}
+
 function baseAttrs(node: BuilderNode, rc: RenderContext, classes: string) {
   const adv = node.advanced
-  const anim = node.animation?.type && node.animation.type !== 'none' && !rc.editor ? ` pb-anim pb-anim--${node.animation.type}` : ''
+  const a = node.animation
+  const fx = a?.type && a.type !== 'none' && /^[a-z-]+$/.test(a.type) ? a.type : null
+  // In the editor blocks stay visible (effects are previewed on demand).
+  const anim = fx ? (rc.editor ? ` pb-anim-fx--${fx}` : ` pb-anim pb-anim-fx--${fx}${a?.repeat ? ' pb-anim--repeat' : ''}`) : ''
+  const hover = a?.hover && a.hover !== 'none' && /^[a-z]+$/.test(a.hover) ? ` pb-hover--${a.hover}` : ''
   const extraClass = adv?.className && SAFE_TOKEN.test(adv.className) ? ` ${adv.className}` : ''
   const id = adv?.htmlId && /^[A-Za-z][A-Za-z0-9_-]*$/.test(adv.htmlId) ? adv.htmlId : undefined
   // Per-device hiding is done with container-query classes (see builder.css).
   const hide = (['desktop', 'tablet', 'mobile'] as const).filter((d) => node.style?.[d]?.display === 'none').map((d) => ` pb-hide-${d}`).join('')
   return {
-    className: `${classes} n-${node.id}${extraClass}${anim}${hide}`,
+    className: `${classes} n-${node.id}${extraClass}${anim}${hover}${hide}`,
     id,
     ...(rc.editor ? { 'data-node-id': node.id, 'data-node-type': node.type, ...(node.hidden ? { 'data-pb-hidden': '' } : {}) } : {}),
   }
@@ -174,11 +199,14 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
       else if (p.aspect && p.aspect !== 'auto') frameStyle.aspectRatio = safeCssValue(p.aspect) ?? undefined
       const imgStyle: CSSProperties = { objectFit: p.fit === 'contain' ? 'contain' : 'cover', objectPosition: safeCssValue(p.focus) ?? 'center' }
       if (!frameStyle.height && !frameStyle.aspectRatio) imgStyle.height = 'auto'
+      // No image chosen yet: a placeholder in the builder, nothing on the live site.
+      if (!src && !rc.editor) return null
       const img = src ? (
         <img src={src} alt={p.alt ?? ''} loading={p.lazy === false ? 'eager' : 'lazy'} decoding="async" style={imgStyle} />
       ) : (
-        <div className="pb-img-empty">{rc.editor ? 'Choose an image in the panel on the right' : null}</div>
+        <ImagePlaceholder onPick={rc.editor?.pickImage ? () => rc.editor!.pickImage!(node.id) : undefined} />
       )
+      if (!src && !frameStyle.height && !frameStyle.aspectRatio) frameStyle.aspectRatio = '16/9'
       const l = link(rc, p.link)
       return (
         <figure {...attrs}>
@@ -279,8 +307,14 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
       return (
         <div {...baseAttrs(node, rc, 'pb-gallery-wrap')}>
           {images.length === 0 && rc.editor ? (
-            <div className="pb-img-empty">Add images to this gallery in the panel on the right</div>
-          ) : (
+            <div className="pb-gallery" style={{ '--pb-gallery-cols': Number(p.columns) || 3, '--pb-gallery-gap': safeCssValue(p.gap) ?? '16px' } as CSSProperties}>
+              {Array.from({ length: Number(p.columns) || 3 }, (_, i) => (
+                <div key={i} className="pb-gallery-frame" style={{ aspectRatio: safeCssValue(p.aspect) !== 'auto' ? safeCssValue(p.aspect) ?? '4/3' : '4/3' }}>
+                  <ImagePlaceholder compact label={i === 0 ? 'Add gallery images in the panel' : undefined} />
+                </div>
+              ))}
+            </div>
+          ) : images.length === 0 ? null : (
             <GalleryBlock
               images={images}
               columns={Number(p.columns) || 3}

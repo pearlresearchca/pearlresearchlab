@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, ChevronRight, Copy, Crop, ImageIcon, Plus, Trash2, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, Copy, Crop, ImageIcon, Maximize2, Plus, Trash2, X } from 'lucide-react'
 import { BLOCKS, ICON_OPTIONS, type FieldDef } from '@/lib/builder/blocks'
 import type { BuilderNode, Device, PageDoc, Style } from '@/lib/builder/types'
 import { pathTo } from '@/lib/builder/tree'
@@ -12,6 +12,7 @@ import { LinkField } from './link-field'
 import { CropDialog, MediaPickerDialog } from './media'
 import { RichTextEditor } from './rich-text-editor'
 import { DeviceHint, StyleControls } from './style-controls'
+import { AnimationPanel } from './animation-panel'
 import { Btn, Dialog, FieldRow, IconBtn, Segmented, Toggle, cx, inputClass } from './ui'
 
 function ImageControl({ value, onChange, onAlt, label }: { value: string; onChange: (url: string) => void; onAlt?: (alt: string) => void; label: string }) {
@@ -72,15 +73,26 @@ function IconControl({ value, onChange }: { value: string; onChange: (v: string)
   )
 }
 
-function RichTextDialogField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// Rich text is edited right here in the panel (changes show on the page as
+// you type), or in a larger window. While the text is being edited directly
+// on the page, the panel defers to that editor.
+function RichTextPanelField({ value, onChange, locked }: { value: string; onChange: (v: string) => void; locked?: boolean }) {
   const [open, setOpen] = useState(false)
+  if (locked) {
+    return (
+      <p className="rounded-lg border border-dashed border-primary/40 bg-primary/5 p-3 text-xs text-slate-600">
+        You’re editing this text on the page. Use the formatting toolbar above the page, or click outside the text to edit it here.
+      </p>
+    )
+  }
   return (
     <>
-      <div className="pb-rich max-h-32 overflow-hidden rounded-md border border-border bg-background p-2 text-xs text-muted-foreground [&_*]:!text-xs" dangerouslySetInnerHTML={{ __html: value }} />
-      <p className="text-[11px] text-muted-foreground">Tip: double-click the text on the page to edit it in place.</p>
-      <Btn size="sm" onClick={() => setOpen(true)}>Open full editor</Btn>
+      <div className="pb-page overflow-hidden rounded-lg border border-border bg-white" style={{ fontSize: 14 }}>
+        <RichTextEditor html={value} onChange={onChange} compact stickyToolbar={false} className="max-h-[360px] overflow-y-auto" />
+      </div>
+      <Btn size="sm" onClick={() => setOpen(true)}><Maximize2 className="size-3.5" /> Open larger editor</Btn>
       <Dialog open={open} onClose={() => setOpen(false)} title="Edit text" size="lg" footer={<Btn variant="primary" onClick={() => setOpen(false)}>Done</Btn>}>
-        <div className="pb-page" style={{ fontSize: 16 }}>
+        <div className="pb-page pb-canvas-theme rounded-lg bg-white" style={{ fontSize: 16 }}>
           <RichTextEditor html={value} onChange={onChange} autofocus stickyToolbar={false} />
         </div>
       </Dialog>
@@ -154,7 +166,7 @@ function BulkImageAdd({ onAdd }: { onAdd: (urls: { url: string; alt?: string }[]
   )
 }
 
-export function FieldControl({ field, value, props, onChange, onPatch }: { field: FieldDef; value: any; props: Record<string, any>; onChange: (v: any) => void; onPatch?: (p: Record<string, any>) => void }) {
+export function FieldControl({ field, value, props, onChange, onPatch, richLocked }: { field: FieldDef; value: any; props: Record<string, any>; onChange: (v: any) => void; onPatch?: (p: Record<string, any>) => void; richLocked?: boolean }) {
   const id = `f-${field.key}`
   const hint = field.hint
   switch (field.type) {
@@ -236,7 +248,7 @@ export function FieldControl({ field, value, props, onChange, onPatch }: { field
     case 'richtext':
       return (
         <FieldRow label={field.label} hint={hint}>
-          <RichTextDialogField value={value ?? ''} onChange={onChange} />
+          <RichTextPanelField value={value ?? ''} onChange={onChange} locked={richLocked} />
         </FieldRow>
       )
     case 'list':
@@ -259,11 +271,12 @@ type InspectorProps = {
   onNode: (fn: (n: BuilderNode) => BuilderNode, key?: string) => void
   onEditGlobal?: (blockId: string) => void
   globalName?: string
+  editingId?: string | null
 }
 
-export function Inspector({ doc, node, device, onSelect, onProp, onProps, onStyle, onNode, onEditGlobal, globalName }: InspectorProps) {
+export function Inspector({ doc, node, device, onSelect, onProp, onProps, onStyle, onNode, onEditGlobal, globalName, editingId }: InspectorProps) {
   const def = BLOCKS[node.type]
-  const [tab, setTab] = useState<'content' | 'style' | 'advanced'>('content')
+  const [tab, setTab] = useState<'content' | 'style' | 'animate' | 'advanced'>('content')
   const path = pathTo(doc, node.id)
   const fields = (def?.fields ?? []).filter((f) => !f.advanced && (!f.showIf || f.showIf(node.props)))
   const advFields = (def?.fields ?? []).filter((f) => f.advanced && (!f.showIf || f.showIf(node.props)))
@@ -287,7 +300,7 @@ export function Inspector({ doc, node, device, onSelect, onProp, onProps, onStyl
           label="Settings tab"
           value={activeTab}
           onChange={setTab}
-          options={[...(hasContent ? [{ value: 'content' as const, label: 'Content' }] : []), { value: 'style', label: 'Style' }, { value: 'advanced', label: 'Advanced' }]}
+          options={[...(hasContent ? [{ value: 'content' as const, label: 'Content' }] : []), { value: 'style', label: 'Style' }, { value: 'animate', label: 'Animate' }, { value: 'advanced', label: 'Advanced' }]}
         />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -301,7 +314,7 @@ export function Inspector({ doc, node, device, onSelect, onProp, onProps, onStyl
                 {onEditGlobal && node.props.blockId && <Btn variant="primary" onClick={() => onEditGlobal(node.props.blockId)}>Edit global block</Btn>}
               </div>
             ) : (
-              fields.map((f) => <FieldControl key={f.key} field={f} value={node.props[f.key]} props={node.props} onChange={(v) => onProp(f.key, v)} onPatch={onProps} />)
+              fields.map((f) => <FieldControl key={f.key} field={f} value={node.props[f.key]} props={node.props} onChange={(v) => onProp(f.key, v)} onPatch={onProps} richLocked={editingId === node.id} />)
             )}
           </div>
         )}
@@ -311,6 +324,7 @@ export function Inspector({ doc, node, device, onSelect, onProp, onProps, onStyl
             <StyleControls node={node} device={device} onStyle={onStyle} onNode={(fn) => onNode(fn)} groups={def?.styleGroups ?? ['spacing']} />
           </>
         )}
+        {activeTab === 'animate' && <AnimationPanel node={node} onNode={(fn) => onNode(fn)} onChildren={(fn) => onNode((n) => ({ ...n, children: fn(n.children ?? []) }))} />}
         {activeTab === 'advanced' && (
           <div className="flex flex-col gap-4 p-4">
             {advFields.map((f) => (

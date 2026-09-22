@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
@@ -19,25 +19,27 @@ const COLUMN_KINDS: { value: FooterColumn['kind']; label: string }[] = [
   { value: 'newsletter', label: 'Newsletter / get in touch' },
 ]
 
-function useSaver(key: 'header' | 'footer') {
+function useSaver(key: 'header' | 'footer', version: number) {
   const router = useRouter()
+  const versionRef = useRef(version)
   const [saving, setSaving] = useState(false)
   async function save(value: unknown) {
     setSaving(true)
-    const r = await saveSettingAction(key, value)
+    const r = await saveSettingAction(key, value, versionRef.current)
     setSaving(false)
     if ('error' in r) return toast.error(r.error)
+    versionRef.current = r.version
     toast.success(`${key === 'header' ? 'Header' : 'Footer'} saved — updated on every page`)
     router.refresh()
   }
   return { saving, save }
 }
 
-export function HeaderFooterEditor({ header: h0, footer: f0 }: { header: HeaderSettings; footer: FooterSettings }) {
+export function HeaderFooterEditor({ header: h0, footer: f0, versions }: { header: HeaderSettings; footer: FooterSettings; versions: Record<string, number> }) {
   const [header, setHeader] = useState(h0)
   const [footer, setFooter] = useState(f0)
-  const hs = useSaver('header')
-  const fs = useSaver('footer')
+  const hs = useSaver('header', versions.header ?? 0)
+  const fs = useSaver('footer', versions.footer ?? 0)
   const setH = (p: Partial<HeaderSettings>) => setHeader((x) => ({ ...x, ...p }))
   const setCol = (i: number, p: Partial<FooterColumn>) => setFooter((f) => ({ ...f, columns: f.columns.map((c, j) => (j === i ? { ...c, ...p } : c)) }))
   const moveCol = (i: number, d: number) =>

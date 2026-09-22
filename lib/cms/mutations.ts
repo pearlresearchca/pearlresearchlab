@@ -28,6 +28,10 @@ export async function setPageContent(page: string, key: string, value: string, i
   }
 }
 
+// Saves every field of a form in a single database transaction, so a failure
+// can't leave some fields saved and others not.
 export async function setPageContentFields(page: string, formData: FormData, keys: string[]) {
-  await Promise.all(keys.map((key) => setPageContent(page, key, String(formData.get(key) ?? ''))))
+  const values = Object.fromEntries(keys.map((key) => [key, String(formData.get(key) ?? '')]))
+  const insforge = await createInsForgeServerClient()
+  check(await insforge.database.rpc('set_page_content_fields', { p_page: page, p_values: values }))
 }

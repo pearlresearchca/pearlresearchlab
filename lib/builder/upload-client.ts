@@ -103,6 +103,11 @@ export async function uploadMedia(original: File, kind: 'image' | 'video' | 'any
     await insforge.storage.from('site-images').remove(data.key)
     throw new Error(result.error)
   }
+  // Another upload of the same file won the race: keep theirs, drop ours.
+  if (result.reused) {
+    await insforge.storage.from('site-images').remove(data.key).catch(() => undefined)
+    return { media: result.media as MediaItem, reused: true }
+  }
   return { media: result.media as MediaItem, reused: false }
 }
 

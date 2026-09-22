@@ -1,5 +1,6 @@
 import { createInsForgeAdminClient, createInsForgeServerClient } from '@/lib/insforge/server'
 import type { AppUser } from './types'
+import { BackendUnavailableError, unwrap } from './data-error'
 
 export type CurrentAdmin = {
   id: string
@@ -7,16 +8,31 @@ export type CurrentAdmin = {
   profile: AppUser | null
 }
 
+// Auth errors that mean "not signed in" (as opposed to "can't reach the
+// server", which must not look like a logout).
+function isOutage(error: { statusCode?: number; status?: number; error?: string; code?: string } | null | undefined): boolean {
+  if (!error) return false
+  const status = error.statusCode ?? error.status ?? 0
+  return status === 0 || status === 408 || status >= 500 || error.error === 'NETWORK_ERROR' || error.error === 'REQUEST_TIMEOUT' || error.code === 'NETWORK_ERROR'
+}
+
+// Returns null when nobody is signed in. Throws BackendUnavailableError when
+// the auth/database service can't be reached, so outages show an error page
+// instead of silently sending admins to the login screen.
 export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.auth.getCurrentUser()
+  const { data, error } = await insforge.auth.getCurrentUser()
+  if (isOutage(error as never)) throw new BackendUnavailableError('sign-in check', error)
   if (!data?.user) return null
 
-  const { data: profile } = await insforge.database
-    .from('app_users')
-    .select('id, email, full_name, role, sections, created_at')
-    .eq('id', data.user.id)
-    .maybeSingle()
+  const profile = unwrap(
+    await insforge.database
+      .from('app_users')
+      .select('id, email, full_name, role, sections, created_at')
+      .eq('id', data.user.id)
+      .maybeSingle(),
+    'admin profile'
+  )
 
   return {
     id: data.user.id,

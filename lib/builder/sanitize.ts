@@ -15,7 +15,7 @@ const RICH_OPTIONS: sanitizeHtml.IOptions = {
     'table', 'thead', 'tbody', 'tfoot', 'tr', 'th', 'td', 'colgroup', 'col', 'label', 'input', 'div',
   ],
   allowedAttributes: {
-    '*': ['style', 'class', 'data-type', 'data-checked', 'data-text-align', 'id'],
+    '*': ['style', 'class', 'data-type', 'data-checked', 'data-text-align', 'data-variant', 'id'],
     a: ['href', 'target', 'rel', 'title'],
     img: ['src', 'alt', 'title', 'width', 'height', 'loading', 'data-align'],
     th: ['colspan', 'rowspan', 'colwidth'],

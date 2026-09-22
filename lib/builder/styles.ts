@@ -179,6 +179,14 @@ export function styleDeclarations(style: Style | undefined): string[] {
   return out
 }
 
+const EASINGS: Record<string, string> = {
+  ease: 'ease',
+  'ease-out': 'cubic-bezier(.2,.7,.2,1)',
+  'ease-in-out': 'cubic-bezier(.65,0,.35,1)',
+  spring: 'cubic-bezier(.34,1.56,.64,1)',
+  linear: 'linear',
+}
+
 export function nodeClass(node: BuilderNode): string {
   return `n-${node.id}`
 }
@@ -202,7 +210,8 @@ export function docCss(doc: PageDoc | { sections: BuilderNode[] }): string {
     if (node.animation?.type && node.animation.type !== 'none') {
       const dur = Math.max(0, Math.min(5000, Number(node.animation.duration) || 600))
       const delay = Math.max(0, Math.min(5000, Number(node.animation.delay) || 0))
-      base.push(`${sel}{--pb-anim-duration:${dur}ms;--pb-anim-delay:${delay}ms}`)
+      const ease = EASINGS[node.animation.easing ?? 'ease-out'] ?? EASINGS['ease-out']
+      base.push(`${sel}{--pb-anim-duration:${dur}ms;--pb-anim-delay:${delay}ms;--pb-anim-ease:${ease}}`)
     }
   })
 

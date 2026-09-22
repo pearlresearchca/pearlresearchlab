@@ -78,7 +78,7 @@ export default async function ResearchAdminPage() {
                     <TextInput id={`sort-${area.id}`} name="sort_order" type="number" defaultValue={area.sort_order} className="w-24" />
                   </Field>
                   <label className="flex items-center gap-2 pb-2.5 text-sm text-foreground">
-                    <input type="checkbox" name="show_on_home" defaultChecked={area.show_on_home} className="size-4 accent-primary" />
+                    <input type="checkbox" name="show_on_home" defaultChecked={area.show_on_home} className="switch" />
                     Show on Home
                   </label>
                 </div>

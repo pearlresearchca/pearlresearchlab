@@ -22,6 +22,8 @@ export type EditorBridge = {
   inlineText: (node: BuilderNode, key: string, tag: string, className: string, extra?: Record<string, unknown>) => ReactNode
   richText: (node: BuilderNode, className: string) => ReactNode
   emptyContainer: (node: BuilderNode) => ReactNode
+  // Opens the media picker for an image block.
+  pickImage?: (nodeId: string) => void
 }
 
 export type RenderContext = {

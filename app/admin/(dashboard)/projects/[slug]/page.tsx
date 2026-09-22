@@ -87,7 +87,7 @@ export default async function ProjectEditPage({ params }: { params: Promise<{ sl
               <TextInput id="sort_order" name="sort_order" type="number" defaultValue={project.sort_order} className="w-24" />
             </Field>
             <label className="col-span-2 flex items-center gap-2 text-sm text-foreground">
-              <input type="checkbox" name="published" defaultChecked={project.published} className="size-4 accent-primary" />
+              <input type="checkbox" name="published" defaultChecked={project.published} className="switch" />
               Published (visible on the live site)
             </label>
           </div>
