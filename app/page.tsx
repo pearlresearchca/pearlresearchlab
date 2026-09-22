@@ -1,20 +1,33 @@
 import Link from 'next/link'
-import { ArrowUpRight, HeartPulse, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
+import { ArrowUpRight, HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
 import { ArrowLink, SectionHeading } from '@/components/site-shell'
 import { PageFrame } from '@/components/page-frame'
 import { Reveal } from '@/components/reveal'
 import { HeroTilt } from '@/components/hero-tilt'
 import { PartnerLogoMarquee } from '@/components/partner-logos'
-import { getPageContent, getPartnersByContext, getResearchAreas, image, text } from '@/lib/cms/queries'
+import { CmsImage } from '@/components/cms-image'
+import { anchorId } from '@/lib/cms/format'
+import { getAllPartners, getPageContent, getPartnersByContext, getProjects, getResearchAreas, getTeamMembers, image, text } from '@/lib/cms/queries'
 
-const ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network }
+const ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network, Landmark }
 
 export default async function HomePage() {
-  const [content, streams, partners] = await Promise.all([
+  const [content, streams, partners, allPartners, projects, team] = await Promise.all([
     getPageContent('home'),
     getResearchAreas(),
     getPartnersByContext('home'),
+    getAllPartners(),
+    getProjects(true),
+    getTeamMembers(),
   ])
+
+  // Live counts from the CMS, so the hero's proof points never go stale.
+  const stats = [
+    { value: streams.length, label: 'Research streams' },
+    { value: projects.length, label: 'Active projects' },
+    { value: allPartners.length, label: 'Partner organizations' },
+    { value: team.filter((m) => m.group_key !== 'past').length, label: 'Researchers & students' },
+  ].filter((s) => s.value > 0)
 
   const homeStreams = streams.filter((s) => s.show_on_home)
   const heroImage = image(content, 'hero_image')
@@ -33,10 +46,20 @@ export default async function HomePage() {
                 <Link href="/research" className="button button-primary">Explore our research <ArrowUpRight aria-hidden="true" /></Link>
                 <Link href="/about" className="text-link">About PEARL</Link>
               </div>
+              {stats.length > 0 && (
+                <dl className="hero-stats">
+                  {stats.map((stat) => (
+                    <div key={stat.label}>
+                      <dt>{stat.label}</dt>
+                      <dd>{stat.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
             </div>
             <HeroTilt>
               <div className="hero-image-wrap">
-                {heroImage && <img src={heroImage.url} alt="Hands joined together, representing PEARL's community-engaged research" className="hero-image" />}
+                {heroImage && <CmsImage src={heroImage.url} alt="PEARL researchers and community partners at a local farm" className="hero-image" sizes="(max-width: 900px) 100vw, 560px" eager />}
                 <div className="image-caption">
                   <span>{text(content, 'hero_image_caption_1')}</span>
                   <span>{text(content, 'hero_image_caption_2')}</span>
@@ -59,16 +82,18 @@ export default async function HomePage() {
         <section className="streams-section">
           <div className="site-container">
             <SectionHeading kicker={text(content, 'streams_eyebrow')} title={text(content, 'streams_title')} body={text(content, 'streams_body')} />
-            <div className="stream-grid">
+            <div className="stream-grid" style={{ '--stream-count': homeStreams.length } as React.CSSProperties}>
               {homeStreams.map((stream, index) => {
-                const Icon = (stream.icon_name && ICONS[stream.icon_name]) || HeartPulse
+                const Icon = (stream.icon_name && ICONS[stream.icon_name]) || Landmark
                 return (
                   <Reveal className="stream-card" delay={index * 70} key={stream.id}>
-                    <span className="stream-number">0{index + 1}</span>
+                    <span className="stream-number">{String(index + 1).padStart(2, '0')}</span>
                     <Icon className="stream-icon" aria-hidden="true" />
-                    <h3>{stream.title}</h3>
+                    <h3>
+                      <Link href={`/research#${anchorId(stream.title)}`} className="stream-card-link">{stream.title}</Link>
+                    </h3>
                     <p>{stream.home_summary || stream.summary}</p>
-                    <ArrowLink href="/research">Learn more</ArrowLink>
+                    <span className="arrow-link" aria-hidden="true">Learn more<ArrowUpRight /></span>
                   </Reveal>
                 )
               })}
@@ -81,7 +106,7 @@ export default async function HomePage() {
 
         <section className="feature-section">
           <Reveal className="site-container feature-grid">
-            {featureImage && <img src={featureImage.url} alt="Researcher working with fresh produce in a field" />}
+            {featureImage && <CmsImage src={featureImage.url} alt="A PEARL researcher at a community garden plot" sizes="(max-width: 900px) 100vw, 680px" />}
             <div>
               <p className="eyebrow">{text(content, 'feature_eyebrow')}</p>
               <h2>{text(content, 'feature_title')}</h2>

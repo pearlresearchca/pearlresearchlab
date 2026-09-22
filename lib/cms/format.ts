@@ -28,3 +28,39 @@ export function initials(name: string): string {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
 }
+
+export const AUDIT_TABLE_LABELS: Record<string, string> = {
+  page_content: 'Page text',
+  research_areas: 'Research area',
+  about_values: 'PEARL value',
+  partners: 'Partner logo',
+  partner_placements: 'Partner placement',
+  projects: 'Project',
+  project_sections: 'Project section',
+  team_members: 'Team member',
+}
+
+export const AUDIT_ACTION_LABELS: Record<string, string> = {
+  insert: 'Added',
+  update: 'Updated',
+  delete: 'Deleted',
+}
+
+export const AUDIT_ACTION_STYLES: Record<string, string> = {
+  insert: 'bg-green-100 text-green-700',
+  update: 'bg-blue-100 text-blue-700',
+  delete: 'bg-red-100 text-red-700',
+}
+
+export function auditSummary(row: Record<string, unknown> | null | undefined): string {
+  if (!row) return ''
+  for (const field of ['title', 'name', 'heading', 'key']) {
+    if (typeof row[field] === 'string') return row[field] as string
+  }
+  return ''
+}
+
+// Stable in-page anchor for a CMS title, e.g. "Health equity & access" -> "health-equity-access".
+export function anchorId(title: string): string {
+  return title.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}

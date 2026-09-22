@@ -38,11 +38,35 @@ function Required() {
   return <span className="required-mark" aria-hidden="true">*</span>
 }
 
+// The form has no backend yet. When a contact email is configured, submitting
+// opens the visitor's email app with the message pre-filled so it can actually
+// be delivered.
+function buildMailto(email: string, form: HTMLFormElement) {
+  const data = new FormData(form)
+  const field = (name: string) => String(data.get(name) ?? '').trim()
+  const lines = [
+    ['Name', field('name')],
+    ['Organization / affiliation', field('affiliation')],
+    ['Email', field('email')],
+    ['Connection', field('connection')],
+    ['Topic', field('topic')],
+    ['Organization / program involved', field('program')],
+    ['Preferred contact method', field('contact_method')],
+    ['Phone', field('phone')],
+    ['Preferred contact time', field('contact_time')],
+  ].filter(([, v]) => v)
+  const body = `${field('message')}\n\n---\n${lines.map(([k, v]) => `${k}: ${v}`).join('\n')}`
+  const subject = `PEARL enquiry: ${field('topic') || 'General'}`
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 export function ContactForm({
+  email,
   notice,
   confirmationTitle,
   confirmationBody,
 }: {
+  email: string
   notice: string
   confirmationTitle: string
   confirmationBody: string
@@ -55,6 +79,11 @@ export function ContactForm({
       <div className="form-confirmation" role="status" tabIndex={-1} ref={confirmationRef}>
         <h3>{confirmationTitle}</h3>
         <p>{confirmationBody}</p>
+        {email && (
+          <p className="form-confirmation-note">
+            Your email app should have opened with your message. Press send there to deliver it, or write to us directly at <a href={`mailto:${email}`}>{email}</a>.
+          </p>
+        )}
       </div>
     )
   }
@@ -64,6 +93,7 @@ export function ContactForm({
       className="contact-form"
       onSubmit={(e) => {
         e.preventDefault()
+        if (email) window.location.href = buildMailto(email, e.currentTarget)
         setSubmitted(true)
         requestAnimationFrame(() => confirmationRef.current?.focus())
       }}

@@ -41,7 +41,6 @@ export const metadata: Metadata = {
   authors: [{ name: 'PEARL Research Lab' }],
   creator: 'PEARL Research Lab',
   publisher: 'PEARL Research Lab',
-  generator: 'v0.app',
   alternates: {
     canonical: '/',
   },
@@ -78,11 +77,10 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  colorScheme: 'light dark',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' },
-  ],
+  // The site has a single light theme; declaring dark support made browsers
+  // render dark form controls and chrome on light pages.
+  colorScheme: 'light',
+  themeColor: '#0d4f4d',
 }
 
 export default function RootLayout({
@@ -93,6 +91,8 @@ export default function RootLayout({
   return (
     <html lang="en" data-scroll-behavior="smooth" className={`bg-background ${fraunces.variable} ${inter.variable}`}>
       <body className="antialiased">
+        {/* Scroll-reveal content starts hidden; keep it visible without JS. */}
+        <noscript><style>{'.reveal{opacity:1!important;transform:none!important}'}</style></noscript>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

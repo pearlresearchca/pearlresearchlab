@@ -2,8 +2,8 @@ import type { Partner } from '@/lib/cms/types'
 
 export type Logo = Partner
 
-function LogoImg({ image_url, name }: Logo) {
-  return <img src={image_url} alt={name} loading="lazy" />
+function LogoImg({ image_url, name, decorative = false }: Logo & { decorative?: boolean }) {
+  return <img src={image_url} alt={decorative ? '' : name} loading="lazy" />
 }
 
 export function PartnerLogoGrid({ logos }: { logos: Logo[] }) {
@@ -34,9 +34,15 @@ export function PartnerLogoMarquee({ logos }: { logos: Logo[] }) {
   return (
     <div className="logo-marquee" role="list" aria-label="Partner organizations">
       <div className="logo-marquee-track">
-        {[...logos, ...logos].map((logo, i) => (
-          <div className="logo-marquee-item" key={`${logo.id}-${i}`} role="listitem">
+        {logos.map((logo) => (
+          <div className="logo-marquee-item" key={logo.id} role="listitem">
             <LogoImg {...logo} />
+          </div>
+        ))}
+        {/* Second copy only exists to make the scroll loop seamless. */}
+        {logos.map((logo) => (
+          <div className="logo-marquee-item" key={`${logo.id}-loop`} aria-hidden="true">
+            <LogoImg {...logo} decorative />
           </div>
         ))}
       </div>

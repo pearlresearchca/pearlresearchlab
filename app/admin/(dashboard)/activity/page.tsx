@@ -3,34 +3,11 @@ import { ScrollText } from 'lucide-react'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { AdminCard, EmptyState } from '@/components/admin/ui'
-import { initials, relativeTime } from '@/lib/cms/format'
+import { AUDIT_ACTION_LABELS, AUDIT_ACTION_STYLES, AUDIT_TABLE_LABELS, auditSummary, initials, relativeTime } from '@/lib/cms/format'
 import type { AuditLogEntry } from '@/lib/cms/types'
 
-const TABLE_LABELS: Record<string, string> = {
-  page_content: 'Page text',
-  research_areas: 'Research area',
-  about_values: 'PEARL value',
-  partners: 'Partner logo',
-  partner_placements: 'Partner placement',
-  projects: 'Project',
-  project_sections: 'Project section',
-  team_members: 'Team member',
-}
-
-const ACTION_STYLES: Record<string, string> = {
-  insert: 'bg-green-100 text-green-700',
-  update: 'bg-blue-100 text-blue-700',
-  delete: 'bg-red-100 text-red-700',
-}
-
 function summarize(entry: AuditLogEntry): string {
-  const row = entry.new_data ?? entry.old_data
-  if (!row) return ''
-  if (typeof row.title === 'string') return row.title
-  if (typeof row.name === 'string') return row.name
-  if (typeof row.heading === 'string') return row.heading
-  if (typeof row.key === 'string') return row.key
-  return ''
+  return auditSummary(entry.new_data ?? entry.old_data)
 }
 
 export default async function ActivityAdminPage({
@@ -82,7 +59,7 @@ export default async function ActivityAdminPage({
             className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
           >
             <option value="">All sections</option>
-            {Object.entries(TABLE_LABELS).map(([value, label]) => (
+            {Object.entries(AUDIT_TABLE_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
             ))}
           </select>
@@ -103,10 +80,10 @@ export default async function ActivityAdminPage({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">
                     <span className="font-medium">{entry.changed_by_email ?? 'System'}</span>{' '}
-                    <span className={`mx-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${ACTION_STYLES[entry.action] ?? 'bg-muted text-muted-foreground'}`}>
-                      {entry.action}d
+                    <span className={`mx-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${AUDIT_ACTION_STYLES[entry.action] ?? 'bg-muted text-muted-foreground'}`}>
+                      {AUDIT_ACTION_LABELS[entry.action] ?? entry.action}
                     </span>{' '}
-                    {TABLE_LABELS[entry.table_name] ?? entry.table_name}
+                    {AUDIT_TABLE_LABELS[entry.table_name] ?? entry.table_name}
                     {summarize(entry) && <span className="text-muted-foreground"> — {summarize(entry)}</span>}
                   </p>
                 </div>

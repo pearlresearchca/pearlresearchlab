@@ -3,6 +3,9 @@ import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
 import { Reveal } from './reveal'
 import { PartnerLogoGrid, PartnerLogoRow } from './partner-logos'
+import { CmsImage } from './cms-image'
+import { TeamGrid } from './team-grid'
+import { anchorId } from '@/lib/cms/format'
 import {
   getAboutValues,
   getPageContent,
@@ -95,18 +98,31 @@ export async function ResearchPage() {
           title={text(content, 'hero_title')}
           intro={text(content, 'hero_intro')}
         />
+        {areas.length > 1 && (
+          <nav className="research-jump" aria-label="Research streams">
+            <div className="site-container research-jump-inner">
+              {areas.map((area, i) => (
+                <a key={area.id} href={`#${anchorId(area.title)}`}>
+                  <span aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>{area.title}
+                </a>
+              ))}
+            </div>
+          </nav>
+        )}
         <section className="research-list">
           <div className="site-container">
             {areas.map((area, i) => (
-              <Reveal className="research-row" delay={i * 60} key={area.id}>
-                <div className="research-copy">
-                  <span className="stream-number">0{i + 1}</span>
-                  <h2>{area.title}</h2>
-                  <p>{area.summary}</p>
-                  <ArrowLink href="/contact">Discuss this area</ArrowLink>
-                </div>
-                {area.image_url && <img src={area.image_url} alt={area.title} />}
-              </Reveal>
+              <div className="research-anchor" id={anchorId(area.title)} key={area.id}>
+                <Reveal className="research-row" delay={i * 60}>
+                  <div className="research-copy">
+                    <span className="stream-number">{String(i + 1).padStart(2, '0')}</span>
+                    <h2>{area.title}</h2>
+                    <p>{area.summary}</p>
+                    <ArrowLink href="/contact">Discuss this area</ArrowLink>
+                  </div>
+                  {area.image_url && <CmsImage src={area.image_url} alt={area.title} sizes="(max-width: 900px) 100vw, 480px" />}
+                </Reveal>
+              </div>
             ))}
           </div>
         </section>
@@ -140,7 +156,7 @@ async function ProjectFeature({ project, index }: { project: Project; index: num
 
       {project.banner_image_url && (
         <Reveal className="site-container project-banner-wrap" delay={80}>
-          <img className="project-banner" src={project.banner_image_url} alt={project.title} />
+          <CmsImage className="project-banner" src={project.banner_image_url} alt={project.title} sizes="(max-width: 1228px) 100vw, 1180px" width={2000} height={900} eager={index === 0} />
         </Reveal>
       )}
 
@@ -204,7 +220,7 @@ async function SectionRow({
           <h3>{heading}</h3>
           {body.map((p) => <p key={p}>{p}</p>)}
         </div>
-        {image && <img src={image} alt={heading} />}
+        {image && <CmsImage src={image} alt={heading} sizes="(max-width: 900px) 100vw, 480px" />}
       </Reveal>
       {logos.length > 0 && (
         <Reveal delay={delay + 40}>
@@ -244,11 +260,16 @@ const GROUPS: { key: TeamGroupKey; title: string; past?: boolean }[] = [
   { key: 'past', title: 'Past Contributors', past: true },
 ]
 
+function TeamPhoto({ member, sizes }: { member: TeamMember; sizes: string }) {
+  if (!member.image_url) return <span className="team-photo-placeholder" aria-hidden="true">{member.name.charAt(0)}</span>
+  return <CmsImage src={member.image_url} alt={`${member.name}, ${member.role}`} sizes={sizes} width={800} height={1000} />
+}
+
 function TeamCard({ member, delay = 0, reverse = false }: { member: TeamMember; delay?: number; reverse?: boolean }) {
   return (
     <Reveal className={reverse ? 'team-row team-row-reverse' : 'team-row'} delay={delay}>
       <div className="team-photo-frame">
-        {member.image_url && <img src={member.image_url} alt={`${member.name}, ${member.role}`} />}
+        <TeamPhoto member={member} sizes="(max-width: 640px) 100vw, 300px" />
       </div>
       <div className="team-card-content">
         <p className="role-tag">{member.role}</p>
@@ -270,7 +291,12 @@ function TeamGroup({ title, members, past = false }: { title: string; members: T
           <h2>{title}</h2>
         </div>
       </Reveal>
-      {members.map((member, i) => <TeamCard member={member} delay={i * 60} reverse={i % 2 === 1} key={member.id} />)}
+      <Reveal>
+        <TeamGrid
+          members={members}
+          photos={Object.fromEntries(members.map((m) => [m.id, <TeamPhoto key={m.id} member={m} sizes="(max-width: 640px) 50vw, 280px" />]))}
+        />
+      </Reveal>
     </section>
   )
 }
@@ -347,6 +373,37 @@ export async function ContactPage() {
           intro={text(content, 'hero_intro')}
         />
 
+        <section className="contact-section" id="start-a-conversation">
+          <div className="site-container contact-grid">
+            <Reveal>
+              <div className="section-heading">
+                <h2>{text(content, 'start_title')}</h2>
+                {prose(content, 'start_body').map((p) => <p key={p}>{p}</p>)}
+              </div>
+              <div className="contact-details">
+                <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
+                <p><strong>Hours</strong><br />{text(content, 'hours')}</p>
+                {email && <p className="contact-email"><strong>Email</strong><br /><a href={`mailto:${email}`}>{email}</a></p>}
+              </div>
+              <div className="contact-cta">
+                <a className="button button-primary" href="#send-a-message">{text(content, 'cta_label')}</a>
+              </div>
+            </Reveal>
+            <Reveal delay={100}>
+              <div className="form-heading" id="send-a-message">
+                <h2>{text(content, 'form_title')}</h2>
+                <p>{text(content, 'form_intro')}</p>
+              </div>
+              <ContactForm
+                email={email}
+                notice={text(content, 'sensitive_notice')}
+                confirmationTitle={text(content, 'confirmation_title')}
+                confirmationBody={text(content, 'confirmation_body')}
+              />
+            </Reveal>
+          </div>
+        </section>
+
         <section className="partnerships-section" aria-labelledby="partnerships-title">
           <Reveal className="site-container partnerships-intro prose">
             <h2 id="partnerships-title">{text(content, 'partnerships_title')}</h2>
@@ -386,35 +443,6 @@ export async function ContactPage() {
           </div>
         </section>
 
-        <section className="contact-section" id="start-a-conversation">
-          <div className="site-container contact-grid">
-            <Reveal>
-              <div className="section-heading">
-                <h2>{text(content, 'start_title')}</h2>
-                {prose(content, 'start_body').map((p) => <p key={p}>{p}</p>)}
-              </div>
-              <div className="contact-details">
-                <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
-                <p><strong>Hours</strong><br />{text(content, 'hours')}</p>
-                {email && <p className="contact-email"><strong>Email</strong><br /><a href={`mailto:${email}`}>{email}</a></p>}
-              </div>
-              <div className="contact-cta">
-                <a className="button button-primary" href="#send-a-message">{text(content, 'cta_label')}</a>
-              </div>
-            </Reveal>
-            <Reveal delay={100}>
-              <div className="form-heading" id="send-a-message">
-                <h2>{text(content, 'form_title')}</h2>
-                <p>{text(content, 'form_intro')}</p>
-              </div>
-              <ContactForm
-                notice={text(content, 'sensitive_notice')}
-                confirmationTitle={text(content, 'confirmation_title')}
-                confirmationBody={text(content, 'confirmation_body')}
-              />
-            </Reveal>
-          </div>
-        </section>
       </main>
     </PageFrame>
   )
