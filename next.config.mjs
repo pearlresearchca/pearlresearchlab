@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Email templates are read from disk at runtime (lib/email/templates.ts).
+  outputFileTracingIncludes: {
+    '/**': ['./templates/**/*'],
+  },
   images: {
     unoptimized: true,
   },

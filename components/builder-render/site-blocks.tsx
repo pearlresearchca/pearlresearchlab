@@ -1,4 +1,4 @@
-import { HeartPulse, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
+import { HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
 import { ArrowLink } from '@/components/site-shell'
 import { Reveal } from '@/components/reveal'
 import { PartnerLogoGrid, PartnerLogoMarquee, PartnerLogoRow } from '@/components/partner-logos'
@@ -10,7 +10,7 @@ import type { AboutValue, Partner, Project, ProjectSection, ResearchArea, TeamMe
 // still edited in their own admin screens; these blocks decide where and how
 // they appear on a page. Markup reuses the original site's components/classes.
 
-const AREA_ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network }
+const AREA_ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network, Landmark }
 
 export function ResearchAreasBlock({ areas, props, link }: { areas: ResearchArea[]; props: Record<string, any>; link: { href: string } | null }) {
   const list = props.homeOnly ? areas.filter((a) => a.show_on_home) : areas

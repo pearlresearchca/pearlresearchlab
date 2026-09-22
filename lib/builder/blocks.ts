@@ -585,7 +585,7 @@ export const BLOCK_LIST: BlockDef[] = [
       { key: 'email', label: 'Email', type: 'text', showIf: (p) => !p.useSite },
       { key: 'phone', label: 'Phone', type: 'text', showIf: (p) => !p.useSite },
       { key: 'hours', label: 'Hours', type: 'text' },
-      { key: 'layout', label: 'Layout', type: 'segmented', options: [{ value: 'row', label: 'In a row' }, { value: 'stack', label: 'Stacked' }] },
+      { key: 'layout', label: 'Layout', type: 'segmented', options: [{ value: 'row', label: 'In a row' }, { value: 'stack', label: 'Stacked' }, { value: 'cards', label: 'Cards' }] },
     ],
     styleGroups: TEXT_GROUPS,
     create: () => ({ type: 'contact-info', props: { useSite: true, address: '', email: '', phone: '', hours: '', layout: 'row' } }),
@@ -598,6 +598,7 @@ export const BLOCK_LIST: BlockDef[] = [
     description: 'Collect messages; submissions appear in the admin',
     fields: [
       { key: 'formName', label: 'Form name', type: 'text', hint: 'Shown in Form submissions so you can tell forms apart.' },
+      { key: 'appearance', label: 'Look', type: 'segmented', options: [{ value: 'card', label: 'Card' }, { value: 'plain', label: 'Plain' }] },
       {
         key: 'fields',
         label: 'Fields',
@@ -632,16 +633,19 @@ export const BLOCK_LIST: BlockDef[] = [
       { key: 'notice', label: 'Note above the button', type: 'textarea', rows: 2 },
       { key: 'confirmationTitle', label: 'Thank-you title', type: 'text' },
       { key: 'confirmationMessage', label: 'Thank-you message', type: 'textarea', rows: 3 },
+      { key: 'thankYouEmail', label: 'Email a thank-you to the sender', type: 'toggle', hint: 'Uses the form’s Email field. Who gets notified is set in Form submissions → Email settings.' },
     ],
     styleGroups: BOX_GROUPS,
     create: () => ({
       type: 'form',
       props: {
         formName: 'Contact form',
+        appearance: 'card',
         submitLabel: 'Send message',
         notice: '',
         confirmationTitle: 'Thank you!',
         confirmationMessage: 'Your message has been received. We will be in touch soon.',
+        thankYouEmail: true,
         fields: [
           { id: uid(), label: 'Name', kind: 'text', required: true, placeholder: '', options: '', half: true },
           { id: uid(), label: 'Email', kind: 'email', required: true, placeholder: '', options: '', half: true },

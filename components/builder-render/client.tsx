@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowUpRight, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowUpRight, CheckCircle2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { submitFormAction } from '@/lib/builder/form-actions'
 
 // Adds `.is-in` to animated blocks as they scroll into view. Respects
@@ -180,6 +180,7 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
   if (state === 'done') {
     return (
       <div className="pb-form-done" role="status" tabIndex={-1} ref={doneRef}>
+        <CheckCircle2 className="pb-form-done-icon" aria-hidden="true" />
         <h3>{props.confirmationTitle || 'Thank you!'}</h3>
         <p>{props.confirmationMessage}</p>
       </div>
@@ -229,11 +230,13 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
           return (
             <fieldset key={f.id} className={cls}>
               <legend>{f.label}{req}</legend>
-              {options.map((o) => (
-                <label key={o} className="pb-choice">
-                  <input type="radio" name={name} value={o} required={f.required} /> {o}
-                </label>
-              ))}
+              <div className="pb-choices">
+                {options.map((o) => (
+                  <label key={o} className="pb-choice pb-choice--pill">
+                    <input type="radio" name={name} value={o} required={f.required} /> {o}
+                  </label>
+                ))}
+              </div>
             </fieldset>
           )
         }

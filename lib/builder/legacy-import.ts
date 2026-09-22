@@ -169,6 +169,13 @@ const TOPICS = [
   'Community consultation', 'Health-workforce planning', 'Student / practicum opportunity', 'Potential grant or proposal collaboration', 'Partnership / networking', 'Other',
 ]
 
+// A bulleted list shown as a grid of highlighted cards.
+function chipList(html: string): BuilderNode {
+  const node = n.rich(html)
+  node.advanced = { className: 'pb-chip-list' }
+  return node
+}
+
 function field(label: string, kind: string, required = false, extra: Record<string, any> = {}) {
   return { id: uid(), label, kind, required, placeholder: '', options: '', half: false, ...extra }
 }
@@ -184,7 +191,7 @@ async function contact(): Promise<PageDoc> {
     sections: [
       pageHero(text(c, 'hero_kicker'), text(c, 'hero_title'), text(c, 'hero_intro')),
       n.section({ width: 'narrow', label: 'Community partnerships' }, [n.heading(text(c, 'partnerships_title')), n.rich(richHtml(c, 'partnerships_intro'))]),
-      n.section({ label: 'Areas of interest' }, [n.heading(text(c, 'interests_title')), n.rich(listHtml(lines(c, 'interests_list'))), n.text(text(c, 'interests_note'), { muted: true })], {
+      n.section({ label: 'Areas of interest' }, [n.heading(text(c, 'interests_title')), chipList(listHtml(lines(c, 'interests_list'))), n.text(text(c, 'interests_note'), { muted: true })], {
         background: { type: 'color', color: TINT },
       }),
       n.section({ label: 'How we can connect' }, [
@@ -199,7 +206,7 @@ async function contact(): Promise<PageDoc> {
             [
               n.heading(text(c, 'start_title')),
               n.rich(richHtml(c, 'start_body')),
-              makeNode('contact-info', { props: { useSite: false, address, email: text(c, 'email').trim(), phone: '', hours: text(c, 'hours'), layout: 'row' }, style: { desktop: { margin: { top: 'md' } } } }),
+              makeNode('contact-info', { props: { useSite: false, address, email: text(c, 'email').trim(), phone: '', hours: text(c, 'hours'), layout: 'cards' }, style: { desktop: { margin: { top: 'md' } } } }),
               n.button(text(c, 'cta_label') || 'Send us a message', '#send-a-message'),
             ],
             [
@@ -208,18 +215,19 @@ async function contact(): Promise<PageDoc> {
               makeNode('form', {
                 props: {
                   formName: 'Contact PEARL',
+                  appearance: 'card',
                   submitLabel: 'Send message',
                   notice: text(c, 'sensitive_notice'),
                   confirmationTitle: text(c, 'confirmation_title'),
                   confirmationMessage: text(c, 'confirmation_body'),
                   fields: [
-                    field('Name', 'text', true),
-                    field('Organization / Community / Affiliation', 'text'),
-                    field('Email address', 'email', true),
-                    field('What best describes your connection?', 'select', false, { options: CONNECTION_TYPES.join('\n') }),
-                    field('What would you like to discuss?', 'select', true, { options: TOPICS.join('\n') }),
-                    field('Tell us more about your question, priority, or idea.', 'textarea', true),
-                    field('Organization / community / program involved', 'text'),
+                    field('Name', 'text', true, { half: true, placeholder: 'Your full name' }),
+                    field('Email address', 'email', true, { half: true, placeholder: 'you@example.com' }),
+                    field('Organization / Community / Affiliation', 'text', false, { half: true }),
+                    field('What best describes your connection?', 'select', false, { half: true, options: CONNECTION_TYPES.join('\n') }),
+                    field('What would you like to discuss?', 'select', true, { half: true, options: TOPICS.join('\n') }),
+                    field('Organization / community / program involved', 'text', false, { half: true }),
+                    field('Tell us more about your question, priority, or idea.', 'textarea', true, { placeholder: 'A few sentences is plenty — we’ll follow up with any questions.' }),
                     field('How would you like PEARL to connect with you?', 'radio', true, { options: 'Email\nPhone\nEither' }),
                     field('Phone number', 'tel', false, { half: true }),
                     field('Preferred contact time', 'text', false, { half: true, placeholder: 'e.g. weekday mornings' }),

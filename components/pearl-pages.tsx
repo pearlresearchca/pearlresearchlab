@@ -3,6 +3,7 @@ import { ProjectFeatureView, TeamCard, TeamGroup } from './site-views'
 import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
 import { Reveal } from './reveal'
+import { Clock, Mail, MapPin } from 'lucide-react'
 import { richHtml } from '@/lib/cms/rich'
 import type { PageContentMap } from '@/lib/cms/types'
 import { PartnerLogoGrid, PartnerLogoRow } from './partner-logos'
@@ -271,16 +272,40 @@ export async function ContactPage() {
                 <h2>{text(content, 'start_title')}</h2>
                 <RichBody content={content} field="start_body" />
               </div>
-              <div className="contact-details">
-                <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
-                <p><strong>Hours</strong><br />{text(content, 'hours')}</p>
-                {email && <p className="contact-email"><strong>Email</strong><br /><a href={`mailto:${email}`}>{email}</a></p>}
-              </div>
+              <ul className="contact-details">
+                {address.length > 0 && (
+                  <li>
+                    <span className="contact-detail-icon"><MapPin aria-hidden="true" /></span>
+                    <div>
+                      <strong>{address[0]}</strong>
+                      {address.slice(1).map((line) => <span key={line}>{line}</span>)}
+                    </div>
+                  </li>
+                )}
+                {text(content, 'hours') && (
+                  <li>
+                    <span className="contact-detail-icon"><Clock aria-hidden="true" /></span>
+                    <div>
+                      <strong>Hours</strong>
+                      <span>{text(content, 'hours')}</span>
+                    </div>
+                  </li>
+                )}
+                {email && (
+                  <li className="contact-email">
+                    <span className="contact-detail-icon"><Mail aria-hidden="true" /></span>
+                    <div>
+                      <strong>Email</strong>
+                      <a href={`mailto:${email}`}>{email}</a>
+                    </div>
+                  </li>
+                )}
+              </ul>
               <div className="contact-cta">
                 <a className="button button-primary" href="#send-a-message">{text(content, 'cta_label')}</a>
               </div>
             </Reveal>
-            <Reveal delay={100}>
+            <Reveal delay={100} className="contact-form-card">
               <div className="form-heading" id="send-a-message">
                 <h2>{text(content, 'form_title')}</h2>
                 <p>{text(content, 'form_intro')}</p>
