@@ -28,7 +28,7 @@ export async function getCurrentAdmin(): Promise<CurrentAdmin | null> {
   const profile = unwrap(
     await insforge.database
       .from('app_users')
-      .select('id, email, full_name, role, sections, created_at')
+      .select('id, email, full_name, role, sections, created_at, phone, job_title, bio, profile_completed_at')
       .eq('id', data.user.id)
       .maybeSingle(),
     'admin profile'

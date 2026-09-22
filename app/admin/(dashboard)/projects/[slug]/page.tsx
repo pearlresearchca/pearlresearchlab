@@ -114,7 +114,7 @@ export default async function ProjectEditPage({ params }: { params: Promise<{ sl
                   <Field label="Body" htmlFor={`body-${section.id}`} hint="Separate paragraphs with a blank line.">
                     <TextArea id={`body-${section.id}`} name="body_paragraphs" rows={6} defaultValue={section.body_paragraphs.join('\n\n')} />
                   </Field>
-                  <div className="flex flex-wrap items-end gap-4">
+                  <div className="flex flex-wrap items-start gap-4">
                     <Field label="Partner logos context" htmlFor={`ctx-${section.id}`} hint="Optional" className="min-w-40">
                       <TextInput id={`ctx-${section.id}`} name="partners_context" defaultValue={section.partners_context ?? ''} />
                     </Field>

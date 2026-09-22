@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
+import { twMerge } from 'tailwind-merge'
 import { relativeTime } from '@/lib/cms/format'
-import { SECTIONS } from '@/lib/cms/permissions'
+import { SECTION_GROUPS, SECTIONS } from '@/lib/cms/permissions'
 import type { UserDirectory } from '@/lib/cms/types'
 
 export function AdminCard({
@@ -52,32 +53,66 @@ const controlClass =
   'w-full rounded-lg border border-border bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none transition placeholder:text-muted-foreground/70 hover:border-slate-300 focus:border-primary focus:ring-4 focus:ring-primary/15'
 
 export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`${controlClass} ${props.className ?? ''}`} />
+  return <input {...props} className={twMerge(controlClass, props.className)} />
 }
 
-export function TextArea({ rows = 4, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+// Grows with its content (so long text is never cut off inside a small
+// scroll box), starting at `rows` lines and capped at most of the screen.
+export function TextArea({ rows = 4, style, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
       rows={rows}
       {...props}
-      className={`${controlClass} resize-y leading-relaxed ${props.className ?? ''}`}
+      style={{ minHeight: `calc(${rows} * 1.625em + 1.25rem + 2px)`, ...style }}
+      className={twMerge(controlClass, 'max-h-[70vh] resize-y leading-relaxed [field-sizing:content]', props.className)}
     />
   )
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`${controlClass} cursor-pointer ${props.className ?? ''}`} />
+  return <select {...props} className={twMerge(controlClass, 'cursor-pointer', props.className)} />
 }
 
+// Access toggles grouped by area, compact enough to scan at a glance.
 export function SectionCheckboxes({ name = 'sections', defaultValue = [] }: { name?: string; defaultValue?: string[] }) {
   return (
-    <div className="grid gap-1 rounded-xl border border-border bg-background p-2 sm:grid-cols-2">
-      {SECTIONS.map((s) => (
-        <label key={s.key} className="flex cursor-pointer flex-row-reverse items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-surface">
-          <input type="checkbox" name={name} value={s.key} defaultChecked={defaultValue.includes(s.key)} className="switch" />
-          {s.label}
-        </label>
+    <div className="grid gap-3 lg:grid-cols-3">
+      {SECTION_GROUPS.map((g) => (
+        <fieldset key={g.key} className="rounded-xl border border-border bg-background p-3">
+          <legend className="px-1 text-xs font-bold uppercase tracking-wide text-slate-500">{g.label}</legend>
+          <p className="mb-2 px-1 text-[11px] leading-snug text-muted-foreground">{g.description}</p>
+          <div className="flex flex-col">
+            {SECTIONS.filter((s) => s.group === g.key).map((s) => (
+              <label key={s.key} className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-1.5 py-1.5 text-[13px] text-foreground hover:bg-surface">
+                {s.label}
+                <input type="checkbox" name={name} value={s.key} defaultChecked={defaultValue.includes(s.key)} className="switch" />
+              </label>
+            ))}
+          </div>
+        </fieldset>
       ))}
+    </div>
+  )
+}
+
+// Read-only summary of someone's access, as small chips per group.
+export function AccessSummary({ role, sections }: { role: 'admin' | 'editor'; sections: string[] }) {
+  if (role === 'admin') return <p className="rounded-lg bg-primary/5 px-3 py-2 text-sm text-primary">Full access to everything, including managing users.</p>
+  if (sections.length === 0) return <p className="text-sm text-muted-foreground">No access yet.</p>
+  return (
+    <div className="flex flex-col gap-2">
+      {SECTION_GROUPS.map((g) => {
+        const granted = SECTIONS.filter((s) => s.group === g.key && sections.includes(s.key))
+        if (!granted.length) return null
+        return (
+          <div key={g.key} className="flex flex-wrap items-center gap-1.5">
+            <span className="w-28 shrink-0 text-xs font-semibold text-slate-500">{g.label}</span>
+            {granted.map((s) => (
+              <span key={s.key} className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/15">{s.label}</span>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -105,6 +105,10 @@ export type AppUser = {
   role: AppUserRole
   sections: string[]
   created_at: string
+  phone?: string | null
+  job_title?: string | null
+  bio?: string | null
+  profile_completed_at?: string | null
 }
 
 export type UserDirectory = Record<string, { email: string; full_name: string | null }>

@@ -281,3 +281,8 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .form-confirmation p{color:var(--muted-foreground);margin:0}
 @media(max-width:640px){.contact-form .field-row{grid-template-columns:1fr}}
 
+
+/* Core-page rich text (see RichBody in components/pearl-pages.tsx) */
+.rich-body{display:contents}.section-heading .rich-body p{color:var(--muted-foreground);max-width:650px}
+.rich-body a{color:var(--primary);text-decoration:underline;text-underline-offset:3px}
+.rich-body ul,.rich-body ol{margin:0 0 18px;padding-left:1.4em;color:var(--muted-foreground)}

@@ -3,6 +3,8 @@ import { ProjectFeatureView, TeamCard, TeamGroup } from './site-views'
 import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
 import { Reveal } from './reveal'
+import { richHtml } from '@/lib/cms/rich'
+import type { PageContentMap } from '@/lib/cms/types'
 import { PartnerLogoGrid, PartnerLogoRow } from './partner-logos'
 import {
   getAboutValues,
@@ -13,7 +15,6 @@ import {
   getResearchAreas,
   getTeamMembers,
   lines,
-  prose,
   text,
 } from '@/lib/cms/queries'
 import type { Partner, Project, ProjectSection, TeamGroupKey, TeamMember } from '@/lib/cms/types'
@@ -24,7 +25,6 @@ export async function AboutPage() {
     getAboutValues(),
     getPartnersByContext('about'),
   ])
-  const missionBody = prose(content, 'mission_body')
 
   return (
     <PageFrame>
@@ -39,7 +39,7 @@ export async function AboutPage() {
           <Reveal className="site-container mission-inner">
             <p className="eyebrow">{text(content, 'mission_eyebrow')}</p>
             <h2>{text(content, 'mission_title')}</h2>
-            {missionBody.map((p) => <p key={p}>{p}</p>)}
+            <RichBody content={content} field="mission_body" />
           </Reveal>
         </section>
 
@@ -47,7 +47,7 @@ export async function AboutPage() {
           <Reveal className="site-container vision-inner">
             <p className="eyebrow">{text(content, 'vision_eyebrow')}</p>
             <h2>{text(content, 'vision_title')}</h2>
-            <p>{text(content, 'vision_body')}</p>
+            <RichBody content={content} field="vision_body" />
           </Reveal>
         </section>
 
@@ -73,7 +73,7 @@ export async function AboutPage() {
             <Reveal className="partners-intro">
               <p className="eyebrow">{text(content, 'partners_eyebrow')}</p>
               <h2>{text(content, 'partners_title')}</h2>
-              <p>{text(content, 'partners_body')}</p>
+              <RichBody content={content} field="partners_body" />
             </Reveal>
             <Reveal delay={100}>
               <PartnerLogoGrid logos={partners} />
@@ -228,7 +228,7 @@ export async function ContactPage() {
         <section className="partnerships-section" aria-labelledby="partnerships-title">
           <Reveal className="site-container partnerships-intro prose">
             <h2 id="partnerships-title">{text(content, 'partnerships_title')}</h2>
-            {prose(content, 'partnerships_intro').map((p) => <p key={p}>{p}</p>)}
+            <RichBody content={content} field="partnerships_intro" />
           </Reveal>
         </section>
 
@@ -258,7 +258,7 @@ export async function ContactPage() {
             </Reveal>
             <Reveal delay={100}>
               <h2>{text(content, 'approach_title')}</h2>
-              {prose(content, 'approach_body').map((p) => <p key={p}>{p}</p>)}
+              <RichBody content={content} field="approach_body" />
               <p className="approach-note">{text(content, 'approach_note')}</p>
             </Reveal>
           </div>
@@ -269,7 +269,7 @@ export async function ContactPage() {
             <Reveal>
               <div className="section-heading">
                 <h2>{text(content, 'start_title')}</h2>
-                {prose(content, 'start_body').map((p) => <p key={p}>{p}</p>)}
+                <RichBody content={content} field="start_body" />
               </div>
               <div className="contact-details">
                 <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
@@ -296,4 +296,11 @@ export async function ContactPage() {
       </main>
     </PageFrame>
   )
+}
+
+// Formatted text from the rich text editor (sanitized). `display: contents`
+// keeps the paragraphs styled as direct children of the section.
+function RichBody({ content, field }: { content: PageContentMap; field: string }) {
+  const html = richHtml(content, field)
+  return html ? <div className="rich-body pb-rich" dangerouslySetInnerHTML={{ __html: html }} /> : null
 }

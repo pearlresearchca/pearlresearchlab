@@ -1,3 +1,5 @@
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import { Users2 } from 'lucide-react'
 import { getAllTeamMembers, getPageContent, getUserDirectory, text } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
@@ -46,11 +48,11 @@ function MemberCard({ member, users }: { member: TeamMember; users: UserDirector
           <Field label="Bio" htmlFor={`bio-${member.id}`} hint="Separate paragraphs with a blank line.">
             <TextArea id={`bio-${member.id}`} name="bio" rows={5} defaultValue={member.bio_paragraphs.join('\n\n')} />
           </Field>
-          <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-wrap items-start gap-4">
             <Field label="Sort order" htmlFor={`sort-${member.id}`}>
               <TextInput id={`sort-${member.id}`} name="sort_order" type="number" defaultValue={member.sort_order} className="w-24" />
             </Field>
-            <label className="flex items-center gap-2 pb-2.5 text-sm text-foreground">
+            <label className="mt-[26px] flex h-[42px] items-center gap-2 text-sm text-foreground">
               <input type="checkbox" name="active" defaultChecked={member.active} className="switch" />
               Visible on site
             </label>
@@ -76,15 +78,8 @@ export default async function TeamAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Users2 className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Team</h1>
-          <p className="text-sm text-muted-foreground">{members.length} people across all groups — manage photos, roles, and bios.</p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="Team page" description="The Team page text and every member: photos, roles and bios." icon={<Users2 />} />
+      <CorePageNotice legacyKey="team" label="Team" />
 
       <ActionForm action={updateTeamTextAction}>
         <AdminCard title="Team page copy">

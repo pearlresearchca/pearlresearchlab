@@ -18,8 +18,8 @@ export const n = {
   text(text: string, props: Record<string, any> = {}, desktop?: Style) {
     return makeNode('paragraph', { props: { text, size: 'normal', muted: false, ...props }, style: desktop ? { desktop } : undefined })
   },
-  rich(html: string) {
-    return makeNode('richtext', { props: { html } })
+  rich(html: string, desktop?: Style) {
+    return makeNode('richtext', { props: { html }, style: desktop ? { desktop } : undefined })
   },
   button(label: string, href: string, variant = 'primary', extra: Record<string, any> = {}) {
     return makeNode('button', { props: { label, link: { href } as LinkValue, variant, size: 'md', align: 'left', icon: true, ...extra } })

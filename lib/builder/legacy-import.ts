@@ -1,6 +1,7 @@
-import { getPageContent, image, lines, prose, text } from '@/lib/cms/queries'
+import { getPageContent, image, lines, text } from '@/lib/cms/queries'
+import { richHtml } from '@/lib/cms/rich'
 import { makeNode } from './blocks'
-import { listHtml, n, paragraphsHtml } from './presets'
+import { listHtml, n } from './presets'
 import { uid } from './tree'
 import type { BuilderNode, PageDoc } from './types'
 
@@ -94,12 +95,12 @@ async function about(): Promise<PageDoc> {
     version: 1,
     sections: [
       pageHero(text(c, 'hero_kicker'), text(c, 'hero_title'), text(c, 'hero_intro')),
-      n.section({ width: 'narrow', label: 'Mission' }, [n.eyebrow(text(c, 'mission_eyebrow')), n.heading(text(c, 'mission_title')), n.rich(paragraphsHtml(prose(c, 'mission_body')))]),
-      n.section({ width: 'narrow', label: 'Vision' }, [n.eyebrow(text(c, 'vision_eyebrow')), n.heading(text(c, 'vision_title'), 'h2', 'default', { fontSize: 'clamp(28px, 3.6vw, 44px)' }), n.text(text(c, 'vision_body'), { muted: true })], {
+      n.section({ width: 'narrow', label: 'Mission' }, [n.eyebrow(text(c, 'mission_eyebrow')), n.heading(text(c, 'mission_title')), n.rich(richHtml(c, 'mission_body'))]),
+      n.section({ width: 'narrow', label: 'Vision' }, [n.eyebrow(text(c, 'vision_eyebrow')), n.heading(text(c, 'vision_title'), 'h2', 'default', { fontSize: 'clamp(28px, 3.6vw, 44px)' }), n.rich(richHtml(c, 'vision_body'))], {
         background: { type: 'color', color: TINT },
       }),
       n.section({ label: 'Values' }, [n.eyebrow(text(c, 'values_eyebrow')), n.heading(text(c, 'values_title'), 'h2', 'default', { margin: { bottom: 'md' } }), n.block('values')], { background: { type: 'color', color: 'var(--surface)' } }),
-      n.section({ label: 'Partners' }, [n.eyebrow(text(c, 'partners_eyebrow')), n.heading(text(c, 'partners_title')), n.text(text(c, 'partners_body'), { muted: true }, { maxWidth: '720px', margin: { bottom: 'md' } }), n.block('partners', { context: 'about', variant: 'grid' })]),
+      n.section({ label: 'Partners' }, [n.eyebrow(text(c, 'partners_eyebrow')), n.heading(text(c, 'partners_title')), n.rich(richHtml(c, 'partners_body'), { maxWidth: '720px', margin: { bottom: 'md' } }), n.block('partners', { context: 'about', variant: 'grid' })]),
     ],
   }
 }
@@ -182,14 +183,14 @@ async function contact(): Promise<PageDoc> {
     version: 1,
     sections: [
       pageHero(text(c, 'hero_kicker'), text(c, 'hero_title'), text(c, 'hero_intro')),
-      n.section({ width: 'narrow', label: 'Community partnerships' }, [n.heading(text(c, 'partnerships_title')), n.rich(paragraphsHtml(prose(c, 'partnerships_intro')))]),
+      n.section({ width: 'narrow', label: 'Community partnerships' }, [n.heading(text(c, 'partnerships_title')), n.rich(richHtml(c, 'partnerships_intro'))]),
       n.section({ label: 'Areas of interest' }, [n.heading(text(c, 'interests_title')), n.rich(listHtml(lines(c, 'interests_list'))), n.text(text(c, 'interests_note'), { muted: true })], {
         background: { type: 'color', color: TINT },
       }),
       n.section({ label: 'How we can connect' }, [
         n.columns([
           [n.heading(text(c, 'connect_title'), 'h2'), n.text(text(c, 'connect_lead')), n.rich(listHtml(lines(c, 'connect_list'))), n.text(text(c, 'connect_note'), { muted: true })],
-          [n.heading(text(c, 'approach_title'), 'h2'), n.rich(paragraphsHtml(prose(c, 'approach_body'))), n.text(text(c, 'approach_note'), { muted: false }, { fontWeight: '700' })],
+          [n.heading(text(c, 'approach_title'), 'h2'), n.rich(richHtml(c, 'approach_body')), n.text(text(c, 'approach_note'), { muted: false }, { fontWeight: '700' })],
         ], {}, { gap: '80px' }),
       ]),
       n.section({ label: 'Contact' }, [
@@ -197,7 +198,7 @@ async function contact(): Promise<PageDoc> {
           [
             [
               n.heading(text(c, 'start_title')),
-              n.rich(paragraphsHtml(prose(c, 'start_body'))),
+              n.rich(richHtml(c, 'start_body')),
               makeNode('contact-info', { props: { useSite: false, address, email: text(c, 'email').trim(), phone: '', hours: text(c, 'hours'), layout: 'row' }, style: { desktop: { margin: { top: 'md' } } } }),
               n.button(text(c, 'cta_label') || 'Send us a message', '#send-a-message'),
             ],

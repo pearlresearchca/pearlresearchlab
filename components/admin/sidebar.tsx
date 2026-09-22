@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
+  UserRound,
   BarChart3,
   Blocks,
   ChevronsLeft,
@@ -51,22 +52,24 @@ const groups: Group[] = [
     ],
   },
   {
-    label: 'Content',
+    // The site's main pages. Their text can be quick-edited here; their
+    // layout and design are edited in the page builder (Pages).
+    label: 'Core pages',
     items: [
-      { href: '/admin/research', label: 'Research areas', icon: FlaskConical, sections: ['research'] },
+      { href: '/admin/home', label: 'Home', icon: Home, sections: ['home'] },
+      { href: '/admin/about', label: 'About', icon: Info, sections: ['about'] },
+      { href: '/admin/research', label: 'Research', icon: FlaskConical, sections: ['research'] },
       { href: '/admin/projects', label: 'Projects', icon: FolderKanban, sections: ['projects'] },
       { href: '/admin/team', label: 'Team', icon: Users2, sections: ['team'] },
-      { href: '/admin/partners', label: 'Partner logos', icon: Handshake, sections: ['partners'] },
-      { href: '/admin/blocks', label: 'Reusable blocks', icon: Blocks, sections: ['pages'] },
-      { href: '/admin/submissions', label: 'Form submissions', icon: Inbox, sections: ['pages', 'contact'] },
+      { href: '/admin/contact', label: 'Contact', icon: Mail, sections: ['contact'] },
     ],
   },
   {
-    label: 'Classic editors',
+    label: 'Shared content',
     items: [
-      { href: '/admin/home', label: 'Home page (classic)', icon: Home, sections: ['home'] },
-      { href: '/admin/about', label: 'About page (classic)', icon: Info, sections: ['about'] },
-      { href: '/admin/contact', label: 'Contact page (classic)', icon: Mail, sections: ['contact'] },
+      { href: '/admin/partners', label: 'Partner logos', icon: Handshake, sections: ['partners'] },
+      { href: '/admin/blocks', label: 'Reusable blocks', icon: Blocks, sections: ['pages'] },
+      { href: '/admin/submissions', label: 'Form submissions', icon: Inbox, sections: ['pages', 'contact'] },
     ],
   },
   {
@@ -88,7 +91,7 @@ function visibleGroups(access: Access) {
 
 const COLLAPSE_KEY = 'admin-sidebar-collapsed'
 
-function Initials({ name, className = '' }: { name: string; className?: string }) {
+export function Initials({ name, className = '' }: { name: string; className?: string }) {
   const parts = name.trim().split(/[\s@.]+/).filter(Boolean)
   const text = (parts.length > 1 ? parts[0][0] + parts[1][0] : name.slice(0, 2)).toUpperCase()
   return (
@@ -214,6 +217,7 @@ export function AdminShell({
   displayName,
   email,
   signOut,
+  logoUrl,
   children,
 }: {
   role: 'admin' | 'editor'
@@ -221,6 +225,7 @@ export function AdminShell({
   displayName: string
   email: string
   signOut: () => Promise<void>
+  logoUrl?: string
   children: ReactNode
 }) {
   const access = useMemo(() => ({ role, sections }), [role, sections])
@@ -252,7 +257,11 @@ export function AdminShell({
       <div className="flex h-full flex-col">
         <div className={`flex h-16 shrink-0 items-center gap-2.5 border-b border-border ${c ? 'justify-center px-2' : 'px-5'}`}>
           <Link href="/admin" className="flex items-center gap-2.5" aria-label="PEARL admin home">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-indigo-400 text-sm font-bold text-white shadow-md shadow-primary/30">P</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt="" className="size-10 shrink-0 rounded-xl border border-border bg-white object-contain p-0.5" />
+            ) : (
+              <span className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-indigo-400 text-sm font-bold text-white shadow-md shadow-primary/30">P</span>
+            )}
             {!c && (
               <span className="flex flex-col leading-none">
                 <span className="text-[15px] font-bold tracking-wide text-foreground">PEARL</span>
@@ -266,15 +275,6 @@ export function AdminShell({
             </button>
           )}
         </div>
-        {!c && (
-          <div className="mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-border bg-background p-3">
-            <Initials name={displayName} className="size-10 text-sm" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>
-              <p className="truncate text-xs text-slate-500">{roleLabel}</p>
-            </div>
-          </div>
-        )}
         <div className={`admin-scroll min-h-0 flex-1 overflow-y-auto py-4 ${c ? 'px-2' : 'px-3'}`}>
           <SidebarNav access={access} collapsed={c} onNavigate={() => setMobileOpen(false)} />
         </div>
@@ -316,23 +316,25 @@ export function AdminShell({
             </a>
             <Menu
               label="Account"
-              width={240}
+              width={280}
               trigger={(p) => (
-                <button type="button" {...p} className="flex items-center gap-2 rounded-xl p-1 pr-2 transition hover:bg-muted" aria-label="Account menu">
-                  <Initials name={displayName} className="size-9 text-xs" />
-                  <span className="hidden text-left leading-tight md:block">
-                    <span className="block max-w-[140px] truncate text-sm font-semibold">{displayName}</span>
-                    <span className="block text-xs text-slate-500">{roleLabel}</span>
-                  </span>
+                <button type="button" {...p} className="relative rounded-full ring-offset-2 transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Account menu for ${displayName}`} title={displayName}>
+                  <Initials name={displayName} className="size-10 text-sm" />
+                  <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-emerald-500" aria-hidden="true" />
                 </button>
               )}
             >
-              <MenuLabel>Signed in as</MenuLabel>
-              <p className="truncate px-2.5 pb-2 text-sm font-medium">{email}</p>
+              <div className="flex items-center gap-3 px-2.5 pb-3 pt-1.5">
+                <Initials name={displayName} className="size-11 text-sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{displayName}</p>
+                  <p className="break-all text-xs text-slate-500">{email}</p>
+                  <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{roleLabel}</span>
+                </div>
+              </div>
               <MenuSeparator />
-              <MenuItem href="/" external icon={<ExternalLink />}>View live website</MenuItem>
+              <MenuItem href="/admin/profile" icon={<UserRound />}>My profile</MenuItem>
               {role === 'admin' && <MenuItem href="/admin/users" icon={<UserCog />}>Users &amp; access</MenuItem>}
-              <MenuSeparator />
               <MenuItem danger icon={<LogOut />} onSelect={() => signOut()}>Sign out</MenuItem>
             </Menu>
           </div>

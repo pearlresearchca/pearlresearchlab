@@ -45,6 +45,7 @@ function Inner({ pages, templates, theme, siteUrl, canCreate, canNav, legacyToIm
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('all')
   const [navFilter, setNavFilter] = useState('all')
+  const [kind, setKind] = useState<'all' | 'core' | 'custom'>('all')
   const [sort, setSort] = useState<'updated' | 'name'>('updated')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState<string | null>(null)
@@ -56,9 +57,9 @@ function Inner({ pages, templates, theme, siteUrl, canCreate, canNav, legacyToIm
   const list = useMemo(() => {
     const q = query.trim().toLowerCase()
     return pages
-      .filter((p) => (!q || `${p.title} /${p.slug}`.toLowerCase().includes(q)) && (status === 'all' || p.status === status) && (navFilter === 'all' || (navFilter === 'yes') === p.inNav))
+      .filter((p) => (!q || `${p.title} /${p.slug}`.toLowerCase().includes(q)) && (status === 'all' || p.status === status) && (navFilter === 'all' || (navFilter === 'yes') === p.inNav) && (kind === 'all' || (kind === 'core') === !!p.legacy_key))
       .sort((a, b) => (sort === 'name' ? a.title.localeCompare(b.title) : b.updated_at.localeCompare(a.updated_at)))
-  }, [pages, query, status, navFilter, sort])
+  }, [pages, query, status, navFilter, sort, kind])
   const pageRows = list.slice(page * perPage, (page + 1) * perPage)
 
   async function act(id: string, fn: () => Promise<{ ok: true } | { error: string }>, success: string) {
@@ -130,9 +131,19 @@ function Inner({ pages, templates, theme, siteUrl, canCreate, canNav, legacyToIm
 
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,.04),0_4px_16px_-8px_rgba(15,23,42,.08)]">
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-4">
-          <div className="mr-auto">
-            <h2 className="text-base font-semibold text-foreground">All pages</h2>
-            <p className="text-xs text-muted-foreground">{list.length} of {pages.length} pages</p>
+          <div className="mr-auto flex flex-col gap-2">
+            <div className="flex rounded-lg bg-muted p-1" role="tablist" aria-label="Page type">
+              {([
+                ['all', `All (${pages.length})`],
+                ['core', `Core pages (${pages.filter((p) => p.legacy_key).length})`],
+                ['custom', `Your pages (${pages.filter((p) => !p.legacy_key).length})`],
+              ] as const).map(([k, label]) => (
+                <button key={k} type="button" role="tab" aria-selected={kind === k} onClick={() => (setKind(k), setPage(0))} className={cx('rounded-md px-3 py-1.5 text-xs font-semibold transition', kind === k ? 'bg-surface text-primary shadow-sm ring-1 ring-black/5' : 'text-slate-500 hover:text-foreground')}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {kind === 'core' && <p className="max-w-md text-[11px] text-muted-foreground">The website’s main pages. Change their layout here, or quick-edit their text under Core pages in the menu.</p>}
           </div>
           <div className="relative w-full sm:w-64">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -199,7 +210,7 @@ function Inner({ pages, templates, theme, siteUrl, canCreate, canNav, legacyToIm
                         <div className="min-w-0">
                           <Link href={`/admin/builder/${p.id}`} className="block truncate font-semibold text-foreground hover:text-primary">
                             {p.title}
-                            {p.legacy_key && <span className="ml-2 rounded-md bg-amber-50 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-700" title="Builder version of one of the original pages">Original</span>}
+                            {p.legacy_key && <span className="ml-2 rounded-md bg-amber-50 px-1.5 py-0.5 align-middle text-[10px] font-semibold uppercase text-amber-700" title="One of the website’s main pages. Its text can also be quick-edited under Core pages.">Core</span>}
                           </Link>
                           <span className="block truncate font-mono text-xs text-slate-500">/{p.slug}</span>
                         </div>
@@ -295,7 +306,7 @@ function ImportCard({ items }: { items: { key: string; title: string; slug: stri
   const [chosen, setChosen] = useState<Set<string>>(new Set(items.map((i) => i.key)))
   return (
     <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-5">
-      <h2 className="text-sm font-semibold text-blue-950">Edit the original site pages with the page builder</h2>
+      <h2 className="text-sm font-semibold text-blue-950">Design your core pages with the page builder</h2>
       <p className="mt-1 text-sm text-blue-900/80">
         We’ll copy the current content of these pages into the builder as drafts. The live website doesn’t change until you publish each page — and unpublishing brings the original back.
       </p>

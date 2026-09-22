@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { ScrollText } from 'lucide-react'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
+import { getUserDirectory } from '@/lib/cms/queries'
 import { AdminCard, EmptyState } from '@/components/admin/ui'
 import { initials, relativeTime } from '@/lib/cms/format'
 import type { AuditLogEntry } from '@/lib/cms/types'
@@ -56,7 +57,9 @@ export default async function ActivityAdminPage({
 
   if (table) query = query.eq('table_name', table)
 
-  const { data, count } = await query
+  const [{ data, count }, directory] = await Promise.all([query, getUserDirectory().catch(() => ({}) as Awaited<ReturnType<typeof getUserDirectory>>)])
+  // Profile names are looked up at display time, so renames apply to past entries too.
+  const actor = (e: AuditLogEntry) => (e.changed_by && directory[e.changed_by]?.full_name) || e.changed_by_email || 'System'
   const entries = (data ?? []) as AuditLogEntry[]
   const totalPages = Math.max(1, Math.ceil((count ?? 0) / pageSize))
 
@@ -98,11 +101,11 @@ export default async function ActivityAdminPage({
             {entries.map((entry) => (
               <div key={entry.id} className="flex items-center gap-3 py-3">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                  {initials(entry.changed_by_email ?? 'System')}
+                  {initials(actor(entry))}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">
-                    <span className="font-medium">{entry.changed_by_email ?? 'System'}</span>{' '}
+                    <span className="font-medium" title={entry.changed_by_email ?? undefined}>{actor(entry)}</span>{' '}
                     <span className={`mx-1 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${ACTION_STYLES[entry.action] ?? 'bg-muted text-muted-foreground'}`}>
                       {entry.action}d
                     </span>{' '}
