@@ -1,4 +1,3 @@
-import { Stethoscope, Users } from 'lucide-react'
 import { ArrowLink, PageHero, SectionHeading } from './site-shell'
 import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
@@ -36,14 +35,10 @@ export async function AboutPage() {
         />
 
         <section className="content-section">
-          <Reveal className="site-container two-column">
-            <div>
-              <p className="eyebrow">{text(content, 'mission_eyebrow')}</p>
-              <h2>{text(content, 'mission_title')}</h2>
-            </div>
-            <div className="prose">
-              {missionBody.map((p) => <p key={p}>{p}</p>)}
-            </div>
+          <Reveal className="site-container mission-inner">
+            <p className="eyebrow">{text(content, 'mission_eyebrow')}</p>
+            <h2>{text(content, 'mission_title')}</h2>
+            {missionBody.map((p) => <p key={p}>{p}</p>)}
           </Reveal>
         </section>
 
@@ -162,9 +157,20 @@ async function ProjectFeature({ project, index }: { project: Project; index: num
       )}
 
       <div className="site-container">
-        {sections.map((s, i) => (
-          <SectionRow key={s.id} heading={s.heading} body={s.body_paragraphs} image={s.image_url} partnersContext={s.partners_context} delay={i * 60} />
-        ))}
+        {sections.map((s, i) => {
+          const imageIndex = sections.slice(0, i).filter((prev) => prev.image_url).length
+          return (
+            <SectionRow
+              key={s.id}
+              heading={s.heading}
+              body={s.body_paragraphs}
+              image={s.image_url}
+              reverse={imageIndex % 2 === 1}
+              partnersContext={s.partners_context}
+              delay={i * 60}
+            />
+          )
+        })}
         <Reveal className="project-feature-cta">
           <ArrowLink href="/contact">Discuss this project</ArrowLink>
         </Reveal>
@@ -177,20 +183,23 @@ async function SectionRow({
   heading,
   body,
   image,
+  reverse,
   partnersContext,
   delay,
 }: {
   heading: string
   body: string[]
   image: string | null
+  reverse: boolean
   partnersContext: string | null
   delay: number
 }) {
   const logos = partnersContext ? await getPartnersByContext(partnersContext) : []
+  const rowClass = !image ? 'research-row research-row-solo' : reverse ? 'research-row research-row-reverse' : 'research-row'
 
   return (
     <div>
-      <Reveal className={image ? 'research-row' : 'research-row research-row-solo'} delay={delay}>
+      <Reveal className={rowClass} delay={delay}>
         <div className="research-copy">
           <h3>{heading}</h3>
           {body.map((p) => <p key={p}>{p}</p>)}
@@ -322,22 +331,12 @@ export async function TeamPage() {
   )
 }
 
-const collabs = [
-  {
-    icon: Users,
-    title: 'Community organizations',
-    text: 'We do a lot of community-engaged work, and we actively encourage community organizations to reach out with questions, ideas, or opportunities for collaboration.',
-  },
-  {
-    icon: Stethoscope,
-    title: 'Health-care organizations & partners',
-    text: 'We also conduct health-care delivery and program evaluations. Health-care organizations and other partners are welcome to contact us about potential evaluation projects.',
-  },
-]
-
 export async function ContactPage() {
   const content = await getPageContent('contact')
   const address = lines(content, 'address')
+  const interests = lines(content, 'interests_list')
+  const connectItems = lines(content, 'connect_list')
+  const email = text(content, 'email').trim()
 
   return (
     <PageFrame>
@@ -348,37 +347,71 @@ export async function ContactPage() {
           intro={text(content, 'hero_intro')}
         />
 
-        <section className="collab-section">
+        <section className="partnerships-section" aria-labelledby="partnerships-title">
+          <Reveal className="site-container partnerships-intro prose">
+            <h2 id="partnerships-title">{text(content, 'partnerships_title')}</h2>
+            {prose(content, 'partnerships_intro').map((p) => <p key={p}>{p}</p>)}
+          </Reveal>
+        </section>
+
+        <section className="interest-section" aria-labelledby="interests-title">
           <div className="site-container">
-            <SectionHeading
-              kicker={text(content, 'collab_eyebrow')}
-              title={text(content, 'collab_title')}
-              body={text(content, 'collab_body')}
-            />
-            <div className="collab-grid">
-              {collabs.map(({ icon: Icon, title, text: body }, i) => (
-                <Reveal className="collab-card" delay={i * 80} key={title}>
-                  <Icon className="collab-icon" aria-hidden="true" />
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                  <ArrowLink href="#start-a-conversation">Start a conversation</ArrowLink>
-                </Reveal>
-              ))}
-            </div>
+            <Reveal className="section-heading">
+              <h2 id="interests-title">{text(content, 'interests_title')}</h2>
+            </Reveal>
+            <Reveal delay={60}>
+              <ul className="interest-grid">
+                {interests.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+              <p className="interest-note">{text(content, 'interests_note')}</p>
+            </Reveal>
+          </div>
+        </section>
+
+        <section className="connect-section">
+          <div className="site-container connect-grid">
+            <Reveal>
+              <h2>{text(content, 'connect_title')}</h2>
+              <p>{text(content, 'connect_lead')}</p>
+              <ul className="connect-list">
+                {connectItems.map((item) => <li key={item}>{item}</li>)}
+              </ul>
+              <p>{text(content, 'connect_note')}</p>
+            </Reveal>
+            <Reveal delay={100}>
+              <h2>{text(content, 'approach_title')}</h2>
+              {prose(content, 'approach_body').map((p) => <p key={p}>{p}</p>)}
+              <p className="approach-note">{text(content, 'approach_note')}</p>
+            </Reveal>
           </div>
         </section>
 
         <section className="contact-section" id="start-a-conversation">
           <div className="site-container contact-grid">
             <Reveal>
-              <SectionHeading title={text(content, 'start_title')} body={text(content, 'start_body')} />
+              <div className="section-heading">
+                <h2>{text(content, 'start_title')}</h2>
+                {prose(content, 'start_body').map((p) => <p key={p}>{p}</p>)}
+              </div>
               <div className="contact-details">
                 <p>{address.map((line, i) => <span key={line}>{i === 0 ? <strong>{line}</strong> : line}{i < address.length - 1 && <br />}</span>)}</p>
                 <p><strong>Hours</strong><br />{text(content, 'hours')}</p>
+                {email && <p className="contact-email"><strong>Email</strong><br /><a href={`mailto:${email}`}>{email}</a></p>}
+              </div>
+              <div className="contact-cta">
+                <a className="button button-primary" href="#send-a-message">{text(content, 'cta_label')}</a>
               </div>
             </Reveal>
             <Reveal delay={100}>
-              <ContactForm />
+              <div className="form-heading" id="send-a-message">
+                <h2>{text(content, 'form_title')}</h2>
+                <p>{text(content, 'form_intro')}</p>
+              </div>
+              <ContactForm
+                notice={text(content, 'sensitive_notice')}
+                confirmationTitle={text(content, 'confirmation_title')}
+                confirmationBody={text(content, 'confirmation_body')}
+              />
             </Reveal>
           </div>
         </section>

@@ -219,3 +219,62 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
   .team-card-content p:not(.role-tag){text-align:left}
 }
 
+/* Home streams: icons follow the logo colours, green → yellow → green → yellow */
+.stream-card:nth-child(even) .stream-icon{color:var(--accent)}
+
+/* About: Mission mirrors the Vision treatment */
+.mission-inner{max-width:780px;margin:0 auto;text-align:center}
+.mission-inner h2{font-family:var(--font-serif),Georgia,serif;font-weight:400;font-size:clamp(28px,3.6vw,44px);line-height:1.2;color:var(--primary-dark);margin:12px 0 18px}
+.mission-inner p:not(.eyebrow){color:var(--muted-foreground);font-size:18px;max-width:640px;margin:0 auto 18px}
+.mission-inner p:last-child{margin-bottom:0}
+@media(max-width:640px){.mission-inner p:not(.eyebrow){font-size:16px}}
+
+/* Projects: explicit image side, since each row sits in its own wrapper */
+.research-row-reverse .research-copy{order:2}
+.research-row-reverse img{order:1}
+@media(max-width:900px){.research-row-reverse .research-copy,.research-row-reverse img{order:initial}}
+
+/* Team: name and role centred in the text column; bios stay left for readability */
+.team-card-content{text-align:center}
+.team-card-content p:not(.role-tag){text-align:left;font-size:15px}
+
+/* Contact: community partnerships */
+.partnerships-section{padding:96px 0 40px}
+.partnerships-intro{max-width:820px}
+.partnerships-intro h2{font-family:var(--font-serif),Georgia,serif;font-weight:400;font-size:clamp(34px,4vw,52px);line-height:1.15;letter-spacing:-.03em;margin:0 0 24px;color:var(--primary-dark)}
+.interest-section{padding:40px 0 80px}
+.interest-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.interest-grid li{border:1px solid var(--border);border-top:3px solid var(--primary);border-radius:14px;background:var(--surface);padding:20px 22px;font-weight:600;color:var(--primary-dark);line-height:1.45}
+.interest-grid li:nth-child(even){border-top-color:var(--accent)}
+.interest-note{max-width:760px;margin:30px 0 0;color:var(--muted-foreground);font-style:italic}
+.connect-section{padding:90px 0;background:var(--muted);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.connect-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+.connect-grid h2{font-family:var(--font-serif),Georgia,serif;font-weight:400;font-size:clamp(30px,3.6vw,44px);line-height:1.15;margin:0 0 18px;color:var(--primary-dark)}
+.connect-grid p:not(.eyebrow){color:var(--muted-foreground)}
+.connect-list{margin:0 0 24px;padding-left:22px;display:grid;gap:10px;color:var(--foreground)}
+.connect-list li::marker{color:var(--accent)}
+.approach-note{font-weight:700;color:var(--primary-dark)!important}
+.contact-email a{color:var(--primary);border-bottom:1px solid var(--accent)}
+.contact-cta{margin-top:30px}
+@media(max-width:900px){.interest-grid{grid-template-columns:1fr 1fr}.connect-grid{grid-template-columns:1fr;gap:48px}}
+@media(max-width:640px){.partnerships-section{padding:64px 0 28px}.interest-section{padding:28px 0 60px}.interest-grid{grid-template-columns:1fr}.connect-section{padding:60px 0}}
+
+/* Contact form */
+.form-heading h2{font-family:var(--font-serif),Georgia,serif;font-weight:400;font-size:clamp(28px,3.4vw,40px);line-height:1.15;margin:0 0 12px;color:var(--primary-dark)}
+.form-heading p{color:var(--muted-foreground);margin:0 0 8px}
+.contact-form select{font:inherit;border:1px solid var(--border);background:var(--background);padding:13px 14px;color:var(--foreground);outline-color:var(--primary);width:100%;max-width:100%}
+.contact-form input,.contact-form textarea{width:100%;max-width:100%}
+.contact-form fieldset{border:0;margin:12px 0 0;padding:0;min-width:0}
+.contact-form legend{font-size:14px;font-weight:700;padding:0;margin-bottom:8px}
+.contact-form .choice-row{display:flex;flex-wrap:wrap;gap:10px 22px}
+.contact-form .choice-row label{display:inline-flex;align-items:center;gap:8px;margin:0;font-weight:400;font-size:15px}
+.contact-form .choice-row input{width:auto;accent-color:var(--primary)}
+.contact-form .field-row{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+.contact-form .field-row>div{display:flex;flex-direction:column;gap:9px;min-width:0}
+.contact-form .required-mark{color:var(--primary);font-weight:700;margin-left:2px}
+.sensitive-notice{margin:18px 0 0;padding:14px 16px;border-left:3px solid var(--accent);background:var(--muted);font-size:14px;color:var(--muted-foreground)}
+.form-confirmation{border:1px solid var(--border);border-top:3px solid var(--primary);border-radius:14px;background:var(--surface);padding:34px}
+.form-confirmation h3{font-family:var(--font-serif),Georgia,serif;font-weight:400;font-size:28px;line-height:1.2;margin:0 0 12px;color:var(--primary-dark)}
+.form-confirmation p{color:var(--muted-foreground);margin:0}
+@media(max-width:640px){.contact-form .field-row{grid-template-columns:1fr}}
+

@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { setPageContent, setPageContentFields } from '@/lib/cms/mutations'
+import { setPageContentFields } from '@/lib/cms/mutations'
 import { withErrorHandling, type ActionResult } from '@/lib/cms/action-result'
 
 export async function updateContactAction(formData: FormData): Promise<ActionResult> {
@@ -10,14 +10,30 @@ export async function updateContactAction(formData: FormData): Promise<ActionRes
       'hero_kicker',
       'hero_title',
       'hero_intro',
-      'collab_eyebrow',
-      'collab_title',
-      'collab_body',
+      'partnerships_title',
+      'partnerships_intro',
+      'interests_title',
+      'interests_note',
+      'connect_title',
+      'connect_lead',
+      'connect_note',
+      'approach_title',
+      'approach_body',
+      'approach_note',
       'start_title',
       'start_body',
+      'cta_label',
       'hours',
+      'email',
+      'form_title',
+      'form_intro',
+      'sensitive_notice',
+      'confirmation_title',
+      'confirmation_body',
+      'address',
+      'interests_list',
+      'connect_list',
     ])
-    await setPageContent('contact', 'address', String(formData.get('address') ?? ''))
 
     revalidatePath('/admin/contact')
     revalidatePath('/contact')
