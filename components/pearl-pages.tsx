@@ -370,8 +370,8 @@ export async function ContactPage() {
   )
 }
 
-// Areas of Interest cards cycle through this many colour tones (see .tone-N in globals.css).
-const INTEREST_TONES = 6
+// Areas of Interest cards alternate theme teal and gold (see .tone-N in globals.css).
+const INTEREST_TONES = 2
 
 // Items are editable text, so icons are matched on keywords with a neutral fallback.
 const INTEREST_ICONS: [RegExp, LucideIcon][] = [
