@@ -14,7 +14,7 @@ export function PreviewShell({ id, title, slug, status }: { id: string; title: s
   const [device, setDevice] = useState<keyof typeof WIDTHS>('desktop')
   const [key, setKey] = useState(0)
   return (
-    <div className="flex h-dvh flex-col bg-[#e9eeed] font-sans">
+    <div className="admin-ui flex h-dvh flex-col bg-[#e8ecf4]">
       <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border bg-surface px-3">
         <Link href={`/admin/builder/${id}`} className="inline-flex items-center gap-1.5 text-sm font-medium hover:text-primary">
           <ArrowLeft className="size-4" /> Back to editor

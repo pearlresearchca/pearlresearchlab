@@ -303,17 +303,57 @@
   .pb-site-block .stream-grid, .pb-site-block .values-grid { grid-template-columns: 1fr; }
 }
 
-/* ------------------------------------------------------------ animation */
+/* ------------------------------------------------------------ animation
+ * Entrance effects are keyframe animations: `.pb-anim-fx--<type>` picks the
+ * keyframes, `.pb-anim` hides the block until it scrolls into view (`.is-in`).
+ * `.pb-anim-play` replays an effect in the builder preview. Fill mode is
+ * `backwards` so hover effects (transforms) work once the entrance is done.
+ */
+@keyframes pb-kf-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes pb-kf-slide-up { from { opacity: 0; transform: translateY(36px) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-slide-down { from { opacity: 0; transform: translateY(-36px) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-slide-left { from { opacity: 0; transform: translateX(-48px) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-slide-right { from { opacity: 0; transform: translateX(48px) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-zoom-in { from { opacity: 0; transform: scale(.86) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-zoom-out { from { opacity: 0; transform: scale(1.12) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-flip { from { opacity: 0; transform: perspective(900px) rotateX(-60deg) } to { opacity: 1; transform: none } }
+@keyframes pb-kf-blur { from { opacity: 0; filter: blur(14px) } to { opacity: 1; filter: none } }
+@keyframes pb-kf-bounce { 0% { opacity: 0; transform: translateY(48px) } 60% { opacity: 1; transform: translateY(-10px) } 80% { transform: translateY(4px) } 100% { transform: none } }
+@keyframes pb-kf-rotate { from { opacity: 0; transform: rotate(-8deg) scale(.94) } to { opacity: 1; transform: none } }
+.pb-anim-fx--fade { --pb-kf: pb-kf-fade; }
+.pb-anim-fx--slide-up { --pb-kf: pb-kf-slide-up; }
+.pb-anim-fx--slide-down { --pb-kf: pb-kf-slide-down; }
+.pb-anim-fx--slide-left { --pb-kf: pb-kf-slide-left; }
+.pb-anim-fx--slide-right { --pb-kf: pb-kf-slide-right; }
+.pb-anim-fx--zoom, .pb-anim-fx--zoom-in { --pb-kf: pb-kf-zoom-in; }
+.pb-anim-fx--zoom-out { --pb-kf: pb-kf-zoom-out; }
+.pb-anim-fx--flip { --pb-kf: pb-kf-flip; }
+.pb-anim-fx--blur { --pb-kf: pb-kf-blur; }
+.pb-anim-fx--bounce { --pb-kf: pb-kf-bounce; }
+.pb-anim-fx--rotate { --pb-kf: pb-kf-rotate; }
 @media (prefers-reduced-motion: no-preference) {
-  .pb-anim { opacity: 0; transition: opacity var(--pb-anim-duration, 600ms) ease var(--pb-anim-delay, 0ms), transform var(--pb-anim-duration, 600ms) cubic-bezier(.2, .7, .2, 1) var(--pb-anim-delay, 0ms); }
-  .pb-anim--slide-up { transform: translateY(28px); }
-  .pb-anim--slide-left { transform: translateX(-28px); }
-  .pb-anim--zoom { transform: scale(.94); }
-  .pb-anim.is-in { opacity: 1; transform: none; }
+  .pb-anim:not(.is-in) { opacity: 0; }
+  .pb-anim.is-in, .pb-anim-play {
+    animation-name: var(--pb-kf, pb-kf-fade);
+    animation-duration: var(--pb-anim-duration, 700ms);
+    animation-timing-function: var(--pb-anim-ease, cubic-bezier(.2, .7, .2, 1));
+    animation-delay: var(--pb-anim-delay, 0ms);
+    animation-fill-mode: backwards;
+  }
 }
 
+/* Hover effects */
+.pb-hover--lift, .pb-hover--grow, .pb-hover--shrink, .pb-hover--glow, .pb-hover--tilt, .pb-hover--brighten { transition: transform .25s ease, box-shadow .25s ease, filter .25s ease; }
+@media (prefers-reduced-motion: no-preference) {
+  .pb-hover--lift:hover { transform: translateY(-6px); box-shadow: var(--pb-shadow-md); }
+  .pb-hover--grow:hover { transform: scale(1.04); }
+  .pb-hover--shrink:hover { transform: scale(.97); }
+  .pb-hover--tilt:hover { transform: rotate(-1.5deg) scale(1.02); }
+}
+.pb-hover--glow:hover { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent), var(--pb-shadow-md); }
+.pb-hover--brighten:hover { filter: brightness(1.07) saturate(1.1); }
+
 /* ------------------------------------------------------------ builder canvas helpers */
-.pb-editing .pb-anim { opacity: 1; transform: none; }
 .pb-editing [data-node-id] { cursor: default; }
 .pb-editing a { cursor: default; }
 .pb-editing [data-pb-hidden] { opacity: .35; outline: 1px dashed #94a3b8; }
@@ -364,5 +404,84 @@
 /* Layout blocks always span the full width, even in centred/right-aligned sections. */
 :is(.pb-align-center, .pb-align-right) > .pb-inner > :is(.pb-grid, .pb-columns, .pb-gallery-wrap, .pb-accordion, .pb-tabs, .pb-testimonials, .pb-form-wrap, .pb-site-block, .pb-figure, .pb-video, .pb-embed-wrap, .pb-divider, .pb-global) { align-self: stretch; }
 
-/* The site's decorative background accents don't belong in the builder UI. */
-body:has(.pb-builder-root)::before, body:has(.pb-builder-root)::after { display: none; }
+
+/* ============================================================================
+ * Admin panel design tokens. Scoped to .admin-ui so the public website keeps
+ * its own theme; Tailwind colour utilities (bg-primary, text-muted-foreground…)
+ * read these variables, so the whole admin re-themes from here.
+ * ========================================================================== */
+.admin-ui {
+  --primary: #4361ee;
+  --primary-dark: #3149cf;
+  --accent: #f59e0b;
+  --background: #f4f6fb;
+  --surface: #ffffff;
+  --foreground: #1e293b;
+  --muted: #eef2f8;
+  --muted-foreground: #64748b;
+  --border: #e3e8f0;
+  --radius: .75rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.admin-ui ::selection { background: rgba(67, 97, 238, .18); }
+.admin-ui :focus-visible { outline-color: var(--primary); }
+/* The site's decorative background accents don't belong in the admin. */
+body:has(.admin-ui)::before, body:has(.admin-ui)::after { display: none; }
+body:has(.admin-ui) { background: #f4f6fb; }
+
+/* Admin checkbox → switch, for plain HTML forms (classic editors). */
+.admin-ui input[type="checkbox"].switch {
+  appearance: none; width: 38px; height: 22px; border-radius: 999px; background: #cbd5e1; position: relative; cursor: pointer; transition: background .2s; flex: none;
+}
+.admin-ui input[type="checkbox"].switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform .2s;
+}
+.admin-ui input[type="checkbox"].switch:checked { background: var(--primary); }
+.admin-ui input[type="checkbox"].switch:checked::after { transform: translateX(16px); }
+.admin-ui input[type="checkbox"].switch:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Thin, unobtrusive scrollbars inside admin panels. */
+.admin-ui .admin-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+/* ------------------------------------------------------------ rich text styles & boxes (editor "Styles" menu) */
+.pb-s-lead { font-size: 1.22em; line-height: 1.5; }
+.pb-s-small { font-size: .84em; }
+.pb-s-muted { color: var(--muted-foreground); }
+.pb-s-primary { color: var(--primary); }
+.pb-s-accent { color: var(--accent); }
+.pb-s-marker { background: linear-gradient(transparent 58%, color-mix(in srgb, var(--accent) 45%, transparent) 58%); padding: 0 .1em; }
+.pb-s-badge { display: inline-block; padding: .12em .65em; border-radius: 999px; background: var(--tint, #eaf1ef); color: var(--primary); font-size: .8em; font-weight: 700; line-height: 1.5; }
+.pb-s-label { text-transform: uppercase; letter-spacing: .12em; font-size: .78em; font-weight: 700; color: var(--primary); }
+.pb-s-serif { font-family: var(--heading-font); }
+.pb-callout { margin: 1.1em 0; padding: 1em 1.25em; border-radius: 12px; border-left: 4px solid var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface, #fff)); }
+.pb-callout > :first-child { margin-top: 0; }
+.pb-callout > :last-child { margin-bottom: 0; }
+.pb-callout--success { border-color: #16a34a; background: #ecfdf3; }
+.pb-callout--warning { border-color: #d97706; background: #fffbeb; }
+.pb-callout--note { border-color: var(--border); background: var(--tint, #eaf1ef); }
+
+/* ------------------------------------------------------------ builder image placeholder */
+.pb-img-placeholder {
+  position: relative; width: 100%; height: 100%; min-height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  color: color-mix(in srgb, var(--primary) 70%, #64748b);
+  background:
+    radial-gradient(circle at 25% 20%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 55%),
+    linear-gradient(135deg, var(--tint, #eaf1ef), color-mix(in srgb, var(--tint, #eaf1ef) 40%, #fff));
+  border: 1.5px dashed color-mix(in srgb, var(--primary) 35%, transparent);
+  font: 500 13px/1.3 var(--font-inter), system-ui, sans-serif; text-align: center; padding: 12px;
+}
+.pb-img-placeholder--compact { min-height: 0; }
+.pb-img-placeholder-title { font-weight: 700; letter-spacing: .02em; }
+.pb-img-placeholder-hint { font-size: 12px; opacity: .8; }
+.pb-img-placeholder-btn { border: 0; background: var(--primary); color: #fff; font: 600 12px/1 var(--font-inter), system-ui, sans-serif; padding: 8px 12px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--primary) 60%, transparent); }
+.pb-img-placeholder-btn:hover { filter: brightness(1.08); }
+
+/* Admin checkbox: consistent look in every browser. */
+.admin-check { appearance: none; width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid #cbd5e1; background: #fff center / 12px no-repeat; cursor: pointer; transition: background-color .15s, border-color .15s; flex: none; vertical-align: middle; }
+.admin-check:hover { border-color: var(--primary, #4361ee); }
+.admin-check:checked { background-color: var(--primary, #4361ee); border-color: var(--primary, #4361ee); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E"); }
+.admin-check:focus-visible { outline: 2px solid var(--primary, #4361ee); outline-offset: 2px; }

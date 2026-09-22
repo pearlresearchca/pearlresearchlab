@@ -11,8 +11,9 @@ import { googleFontsHref, themeCss } from '@/lib/builder/theme'
 import { sanitizeHtmlClient } from '@/lib/builder/sanitize-client'
 import type { BuilderNode, ThemeSettings } from '@/lib/builder/types'
 import { RichTextEditor } from './rich-text-editor'
+import { MediaPickerDialog } from './media'
 import { computeDrop, endDrag, getDrag, startDrag, type DropTarget } from './dnd'
-import { setProp, type Action, type BuilderState } from './store'
+import { setProp, setStyle, type Action, type BuilderState } from './store'
 import { cx } from './ui'
 
 type Box = { x: number; y: number; w: number; h: number }
@@ -74,6 +75,70 @@ function InlineText({ node, field, tag, className, extra, onCommit, onExit }: { 
   )
 }
 
+// Drag handles for resizing images, videos, embeds and spacers directly on
+// the canvas. Width is stored as a percentage of the parent (so it stays
+// responsive); height in px. Written to the device currently being edited.
+function ResizeHandles({ node, box, zoom, device, dispatch }: { node: BuilderNode; box: Box; zoom: number; device: BuilderState['device']; dispatch: Dispatch<Action> }) {
+  const [label, setLabel] = useState<string | null>(null)
+  const canWidth = node.type === 'image' || node.type === 'video' || node.type === 'embed'
+  const canHeight = node.type === 'image' || node.type === 'spacer' || node.type === 'embed'
+
+  function start(e: React.PointerEvent, mode: 'w' | 'h' | 'wh') {
+    e.preventDefault()
+    e.stopPropagation()
+    const el = document.querySelector<HTMLElement>(`.pb-editing [data-node-id="${node.id}"]`)
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const parentW = el.parentElement?.getBoundingClientRect().width ?? rect.width
+    const frame = node.type === 'image' ? (el.querySelector('.pb-img-frame') as HTMLElement | null) : el
+    const startH = (frame ?? el).getBoundingClientRect().height
+    const x0 = e.clientX
+    const y0 = e.clientY
+    const target = e.currentTarget as HTMLElement
+    target.setPointerCapture(e.pointerId)
+    let raf = 0
+    const move = (ev: PointerEvent) => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        const parts: string[] = []
+        if (mode !== 'h' && canWidth) {
+          const pct = Math.max(10, Math.min(100, Math.round(((rect.width + (ev.clientX - x0)) / parentW) * 100)))
+          dispatch(setStyle(node.id, device, { width: `${pct}%`, maxWidth: undefined }, `${node.id}:resize`))
+          parts.push(`${pct}% wide`)
+        }
+        if (mode !== 'w' && canHeight) {
+          const px = Math.max(24, Math.round((startH + (ev.clientY - y0)) / zoom))
+          if (node.type === 'image' || node.type === 'embed') dispatch({ ...setProp(node.id, 'height', `${px}px`), key: `${node.id}:resize` })
+          else dispatch(setStyle(node.id, device, { height: `${px}px` }, `${node.id}:resize`))
+          parts.push(`${px}px tall`)
+        }
+        setLabel(parts.join(' · '))
+      })
+    }
+    const up = () => {
+      cancelAnimationFrame(raf)
+      target.removeEventListener('pointermove', move)
+      target.removeEventListener('pointerup', up)
+      target.removeEventListener('pointercancel', up)
+      setLabel(null)
+    }
+    target.addEventListener('pointermove', move)
+    target.addEventListener('pointerup', up)
+    target.addEventListener('pointercancel', up)
+  }
+
+  const handle = 'pointer-events-auto absolute z-10 rounded-full border-2 border-white bg-primary shadow-md touch-none'
+  return (
+    <>
+      {canWidth && <span role="slider" aria-label="Drag to change width" aria-valuetext={label ?? undefined} tabIndex={-1} onPointerDown={(e) => start(e, 'w')} className={cx(handle, 'right-[-7px] top-1/2 h-8 w-3 -translate-y-1/2 cursor-ew-resize')} />}
+      {canHeight && <span role="slider" aria-label="Drag to change height" tabIndex={-1} onPointerDown={(e) => start(e, 'h')} className={cx(handle, 'bottom-[-7px] left-1/2 h-3 w-8 -translate-x-1/2 cursor-ns-resize')} />}
+      {canWidth && canHeight && <span role="slider" aria-label="Drag to resize" tabIndex={-1} onPointerDown={(e) => start(e, 'wh')} className={cx(handle, 'bottom-[-7px] right-[-7px] size-3.5 cursor-nwse-resize')} />}
+      {label && <span className="pointer-events-none absolute -bottom-9 right-0 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white shadow-lg">{label}</span>}
+      {box.w < 0 && null}
+    </>
+  )
+}
+
 export function Canvas({
   state,
   dispatch,
@@ -84,7 +149,9 @@ export function Canvas({
   onSaveReusable,
   onCopy,
   empty,
+  toolbarSlot,
 }: {
+  toolbarSlot?: HTMLElement | null
   state: BuilderState
   dispatch: Dispatch<Action>
   data: RenderData
@@ -102,6 +169,7 @@ export function Canvas({
   const [boxes, setBoxes] = useState<{ hover: Box | null; selected: Box | null }>({ hover: null, selected: null })
   const [drop, setDrop] = useState<DropTarget | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [pickFor, setPickFor] = useState<string | null>(null)
 
   const measure = useCallback(() => {
     const scroller = scrollerRef.current
@@ -156,8 +224,9 @@ export function Canvas({
         <InlineText key={node.id} node={node} field={key} tag={tag} className={className} extra={extra} onCommit={(v) => dispatch(setProp(node.id, key, v))} onExit={() => dispatch({ type: 'edit', id: null })} />
       ),
       richText: (node) => (
-        <RichTextEditor key={node.id} html={String(node.props.html ?? '')} autofocus onChange={(html) => dispatch({ ...setProp(node.id, 'html', html), key: `${node.id}:rich` })} />
+        <RichTextEditor key={node.id} html={String(node.props.html ?? '')} autofocus toolbarTarget={toolbarSlot} onChange={(html) => dispatch({ ...setProp(node.id, 'html', html), key: `${node.id}:rich` })} />
       ),
+      pickImage: (id) => setPickFor(id),
       emptyContainer: (node) => (
         <div className="pb-empty-drop" data-empty-for={node.id}>
           <span>
@@ -176,7 +245,7 @@ export function Canvas({
         </div>
       ),
     }),
-    [editingId, dispatch, onRequestAdd]
+    [editingId, dispatch, onRequestAdd, toolbarSlot]
   )
 
   const rc = useMemo(() => ({ data, pageId, editor: bridge, html: sanitizeHtmlClient }), [data, pageId, bridge])
@@ -247,22 +316,36 @@ export function Canvas({
     >
       {fonts && <link rel="stylesheet" href={fonts} />}
       <style dangerouslySetInnerHTML={{ __html: themeCss(theme, '.pb-canvas-theme') }} />
+      <MediaPickerDialog
+          open={pickFor !== null}
+          onClose={() => setPickFor(null)}
+          onSelect={({ url, alt }) => {
+            if (!pickFor) return
+            const id = pickFor
+            dispatch({ type: 'update-node', id, fn: (n) => ({ ...n, props: { ...n.props, src: url, alt: n.props.alt || alt || '' } }) })
+          }}
+        />
       <div className={cx('mx-auto min-h-full bg-background shadow-sm transition-[width] duration-200', device !== 'desktop' && 'my-6 rounded-lg border border-border')} style={{ width: width ? `${width}px` : zoom < 1 ? `${DESKTOP_WIDTH}px` : '100%', maxWidth: zoom < 1 ? 'none' : '100%', zoom }}>
         <div
           ref={pageRef}
           className="pb-canvas-theme"
           style={{ background: 'var(--background)', color: 'var(--foreground)' }}
           onMouseOver={(e) => {
+            if (!pageRef.current?.contains(e.target as Node)) return
             const el = (e.target as Element).closest('[data-node-id]') as HTMLElement | null
             setHoverId(el?.dataset.nodeId ?? null)
           }}
           onMouseLeave={() => setHoverId(null)}
           onClickCapture={(e) => {
+            // Portaled UI (docked text toolbar, menus, dialogs) bubbles React
+            // events through here too; only react to clicks on the page itself.
+            if (!pageRef.current?.contains(e.target as Node)) return
             // Links and buttons on the canvas shouldn't navigate while editing.
             const a = (e.target as Element).closest('a, button[type="submit"], summary')
             if (a && !(e.target as Element).closest('.pb-rte, .pb-empty-drop')) e.preventDefault()
           }}
           onClick={(e) => {
+            if (!pageRef.current?.contains(e.target as Node)) return
             if ((e.target as Element).closest('.pb-rte, [contenteditable="plaintext-only"]')) return
             const el = (e.target as Element).closest('[data-node-id]') as HTMLElement | null
             if (el) {
@@ -271,6 +354,7 @@ export function Canvas({
             } else dispatch({ type: 'select', id: null })
           }}
           onDoubleClick={(e) => {
+            if (!pageRef.current?.contains(e.target as Node)) return
             const el = (e.target as Element).closest('[data-node-id]') as HTMLElement | null
             if (!el) return
             const node = findNode(doc, el.dataset.nodeId!)
@@ -282,12 +366,15 @@ export function Canvas({
       </div>
 
       {/* Overlay: outlines, toolbar and drop indicator. */}
-      <div className="pointer-events-none absolute left-0 top-0" aria-hidden={!selected}>
+      <div className="pointer-events-none absolute left-0 top-0 z-40" aria-hidden={!selected}>
         {boxes.hover && !dragging && (
           <div className="absolute border border-dashed border-primary/60" style={{ left: boxes.hover.x, top: boxes.hover.y, width: boxes.hover.w, height: boxes.hover.h }} />
         )}
         {boxes.selected && selected && (
           <div className="absolute border-2 border-primary" style={{ left: boxes.selected.x, top: boxes.selected.y, width: boxes.selected.w, height: boxes.selected.h }}>
+            {editingId !== selected.id && !dragging && ['image', 'video', 'embed', 'spacer'].includes(selected.type) && (
+              <ResizeHandles node={selected} box={boxes.selected} zoom={zoom} device={device} dispatch={dispatch} />
+            )}
             {editingId !== selected.id && (
               <div
                 className={cx('pointer-events-auto absolute flex items-center gap-0.5 rounded-md bg-primary px-1 py-0.5 text-white shadow-lg', boxes.selected.y < 36 ? 'top-1 left-1' : '-top-8 left-[-2px]')}

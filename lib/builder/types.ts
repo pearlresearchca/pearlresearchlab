@@ -75,10 +75,20 @@ export type Style = {
 
 export type StyleSet = Partial<Record<Device, Style>>
 
+export type AnimationType =
+  | 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right'
+  | 'zoom' | 'zoom-in' | 'zoom-out' | 'flip' | 'blur' | 'bounce' | 'rotate'
+
+export type HoverEffect = 'none' | 'lift' | 'grow' | 'shrink' | 'glow' | 'tilt' | 'brighten'
+
 export type Animation = {
-  type?: 'none' | 'fade' | 'slide-up' | 'slide-left' | 'zoom'
+  type?: AnimationType
   duration?: number
   delay?: number
+  easing?: 'ease' | 'ease-out' | 'ease-in-out' | 'spring' | 'linear'
+  // Play again every time the block scrolls back into view.
+  repeat?: boolean
+  hover?: HoverEffect
 }
 
 export type Advanced = {
@@ -160,6 +170,7 @@ export type ReusableBlock = {
   block: BuilderNode
   is_global: boolean
   updated_at: string
+  version?: number
 }
 
 export type PageTemplateRow = {
@@ -266,6 +277,9 @@ export type ThemeSettings = {
     muted: string
     border: string
     link: string
+    // Soft tinted background for bands and headers.
+    tint: string
+    footer: string
   }
   typography: {
     headingFont: string

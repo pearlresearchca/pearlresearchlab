@@ -1,3 +1,7 @@
+import { RichTextField } from '@/components/admin/rich-text-field'
+import { richHtml } from '@/lib/cms/rich'
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import { Mail } from 'lucide-react'
 import { getPageContent, getUserDirectory, latestEdit, lines, text } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
@@ -24,15 +28,8 @@ export default async function ContactAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Mail className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Contact page</h1>
-          <p className="text-sm text-muted-foreground">This page controls the copy only. The message form is not connected to a backend yet, so submissions are not stored or emailed.</p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="Contact page" description="Contact page wording. Messages sent through the form appear in Form submissions." icon={<Mail />} />
+      <CorePageNotice legacyKey="contact" label="Contact" />
 
       <ActionForm action={updateContactAction} className="flex flex-col gap-6">
         <AdminCard title="Hero" action={edited(['hero_kicker', 'hero_title', 'hero_intro'])}>
@@ -48,7 +45,7 @@ export default async function ContactAdminPage() {
           <div className="grid grid-cols-2 gap-x-5 gap-y-4">
             <Field label="Title" htmlFor="partnerships_title" className="col-span-2"><TextInput id="partnerships_title" name="partnerships_title" defaultValue={text(content, 'partnerships_title')} /></Field>
             <Field label="Intro" htmlFor="partnerships_intro" className="col-span-2" hint={PARAGRAPH_HINT}>
-              <TextArea id="partnerships_intro" name="partnerships_intro" rows={7} defaultValue={text(content, 'partnerships_intro')} />
+              <RichTextField id="partnerships_intro" name="partnerships_intro" defaultValue={richHtml(content, 'partnerships_intro')} tall />
             </Field>
           </div>
         </AdminCard>
@@ -79,7 +76,7 @@ export default async function ContactAdminPage() {
             <Field label="Title" htmlFor="approach_title"><TextInput id="approach_title" name="approach_title" defaultValue={text(content, 'approach_title')} /></Field>
             <Field label="Closing line" htmlFor="approach_note"><TextInput id="approach_note" name="approach_note" defaultValue={text(content, 'approach_note')} /></Field>
             <Field label="Body" htmlFor="approach_body" className="col-span-2" hint={PARAGRAPH_HINT}>
-              <TextArea id="approach_body" name="approach_body" rows={6} defaultValue={text(content, 'approach_body')} />
+              <RichTextField id="approach_body" name="approach_body" defaultValue={richHtml(content, 'approach_body')} tall />
             </Field>
           </div>
         </AdminCard>
@@ -89,7 +86,7 @@ export default async function ContactAdminPage() {
             <Field label="Title" htmlFor="start_title"><TextInput id="start_title" name="start_title" defaultValue={text(content, 'start_title')} /></Field>
             <Field label="Button label" htmlFor="cta_label"><TextInput id="cta_label" name="cta_label" defaultValue={text(content, 'cta_label')} /></Field>
             <Field label="Body" htmlFor="start_body" className="col-span-2" hint={PARAGRAPH_HINT}>
-              <TextArea id="start_body" name="start_body" rows={3} defaultValue={text(content, 'start_body')} />
+              <RichTextField id="start_body" name="start_body" defaultValue={richHtml(content, 'start_body')} />
             </Field>
             <Field label="Address" htmlFor="address" hint="Each line becomes its own line on the page.">
               <TextArea id="address" name="address" rows={3} defaultValue={address} />
@@ -113,7 +110,8 @@ export default async function ContactAdminPage() {
           </div>
         </AdminCard>
 
-        <div className="sticky bottom-4 flex justify-end rounded-lg border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
+        <div className="sticky bottom-4 z-10 ml-auto flex w-fit items-center gap-4 rounded-xl border border-border bg-surface py-2 pl-4 pr-2 shadow-[0_12px_32px_-12px_rgba(15,23,42,.35)]">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Saves every section above</span>
           <SubmitButton>Save changes</SubmitButton>
         </div>
       </ActionForm>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus, Trash2 } from 'lucide-react'
@@ -12,8 +12,9 @@ import { MediaPickerDialog } from './media'
 import { SeoPreview } from './page-dialogs'
 import { Btn, FieldRow, IconBtn, Spinner, inputClass } from './ui'
 
-export function SiteSettingsEditor({ initial, siteUrl }: { initial: SiteSettings; siteUrl: string }) {
+export function SiteSettingsEditor({ initial, siteUrl, version }: { initial: SiteSettings; siteUrl: string; version: number }) {
   const router = useRouter()
+  const versionRef = useRef(version)
   const [site, setSite] = useState(initial)
   const [saving, setSaving] = useState(false)
   const [picker, setPicker] = useState<'logoUrl' | 'faviconUrl' | 'socialImage' | null>(null)
@@ -22,9 +23,10 @@ export function SiteSettingsEditor({ initial, siteUrl }: { initial: SiteSettings
 
   async function save() {
     setSaving(true)
-    const r = await saveSettingAction('site', site)
+    const r = await saveSettingAction('site', site, versionRef.current)
     setSaving(false)
     if ('error' in r) return toast.error(r.error)
+    versionRef.current = r.version
     toast.success('Site settings saved')
     router.refresh()
   }

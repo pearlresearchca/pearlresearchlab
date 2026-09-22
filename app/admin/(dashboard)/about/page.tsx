@@ -1,6 +1,10 @@
+import { RichTextField } from '@/components/admin/rich-text-field'
+import { richHtml } from '@/lib/cms/rich'
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import Link from 'next/link'
 import { Gem, Info, Sparkles, Users } from 'lucide-react'
-import { getAboutValues, getPageContent, getUserDirectory, latestEdit, prose, text } from '@/lib/cms/queries'
+import { getAboutValues, getPageContent, getUserDirectory, latestEdit, text } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { canAccess } from '@/lib/cms/permissions'
 import { AdminCard, Field, LastEdited, TextArea, TextInput } from '@/components/admin/ui'
@@ -14,7 +18,6 @@ export default async function AboutAdminPage() {
   if (!canAccess(admin?.profile, 'about')) return <NoSectionAccess label="the About page" />
 
   const [content, values, users] = await Promise.all([getPageContent('about'), getAboutValues(), getUserDirectory()])
-  const missionBody = prose(content, 'mission_body').join('\n\n')
   const edited = (keys: string[]) => {
     const e = latestEdit(content, keys)
     return <LastEdited at={e?.at} by={e?.by} users={users} />
@@ -22,17 +25,8 @@ export default async function AboutAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Info className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">About page</h1>
-          <p className="text-sm text-muted-foreground">
-            Partner logos on this page are managed on <Link href="/admin/partners" className="font-medium text-primary">Partner logos</Link>.
-          </p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="About page" description="Mission, vision, values and partner text of the About page." icon={<Info />} />
+      <CorePageNotice legacyKey="about" label="About" />
 
       <ActionForm action={updateAboutTextAction} className="flex flex-col gap-6">
         <AdminCard title="Hero" icon={<Sparkles className="size-4" aria-hidden="true" />} action={edited(['hero_kicker', 'hero_title', 'hero_intro'])}>
@@ -59,8 +53,8 @@ export default async function AboutAdminPage() {
             <Field label="Title" htmlFor="mission_title" className="col-span-2">
               <TextArea id="mission_title" name="mission_title" rows={2} defaultValue={text(content, 'mission_title')} />
             </Field>
-            <Field label="Body" htmlFor="mission_body" hint="Separate paragraphs with a blank line." className="col-span-2">
-              <TextArea id="mission_body" name="mission_body" rows={6} defaultValue={missionBody} />
+            <Field label="Body" htmlFor="mission_body" className="col-span-2">
+              <RichTextField id="mission_body" name="mission_body" defaultValue={richHtml(content, 'mission_body')} tall />
             </Field>
           </div>
         </AdminCard>
@@ -75,7 +69,7 @@ export default async function AboutAdminPage() {
               <TextArea id="vision_title" name="vision_title" rows={2} defaultValue={text(content, 'vision_title')} />
             </Field>
             <Field label="Body" htmlFor="vision_body" className="col-span-2">
-              <TextArea id="vision_body" name="vision_body" rows={2} defaultValue={text(content, 'vision_body')} />
+              <RichTextField id="vision_body" name="vision_body" defaultValue={richHtml(content, 'vision_body')} />
             </Field>
           </div>
         </AdminCard>
@@ -101,12 +95,13 @@ export default async function AboutAdminPage() {
               <TextInput id="partners_title" name="partners_title" defaultValue={text(content, 'partners_title')} />
             </Field>
             <Field label="Body" htmlFor="partners_body" className="col-span-2">
-              <TextArea id="partners_body" name="partners_body" rows={2} defaultValue={text(content, 'partners_body')} />
+              <RichTextField id="partners_body" name="partners_body" defaultValue={richHtml(content, 'partners_body')} />
             </Field>
           </div>
         </AdminCard>
 
-        <div className="sticky bottom-4 flex justify-end rounded-lg border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
+        <div className="sticky bottom-4 z-10 ml-auto flex w-fit items-center gap-4 rounded-xl border border-border bg-surface py-2 pl-4 pr-2 shadow-[0_12px_32px_-12px_rgba(15,23,42,.35)]">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Saves every section above</span>
           <SubmitButton>Save changes</SubmitButton>
         </div>
       </ActionForm>

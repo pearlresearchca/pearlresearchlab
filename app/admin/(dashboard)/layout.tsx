@@ -1,13 +1,10 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { Toaster } from 'sonner'
-import { ExternalLink } from 'lucide-react'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { signOutAction } from '../auth-actions'
-import { AdminSidebar } from '@/components/admin/sidebar'
-import { SubmitButton } from '@/components/admin/submit-button'
-import { RoleBadge } from '@/components/admin/ui'
-import { initials } from '@/lib/cms/format'
+import { AdminShell } from '@/components/admin/sidebar'
+import { getSiteConfig } from '@/lib/builder/queries'
+import { ProfileForm } from '@/components/admin/profile-form'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const admin = await getCurrentAdmin()
@@ -16,45 +13,44 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { role, sections } = admin.profile
   const displayName = admin.profile.full_name || admin.email
+  // The site logo brands the admin too; fall back to a monogram if unavailable.
+  const logoUrl = await getSiteConfig().then((c) => c.site.logoUrl).catch(() => undefined)
+
+  // First sign-in: everyone sets up their name and contact details before
+  // using the admin, so the activity log shows real names.
+  if (!admin.profile.profile_completed_at) {
+    return (
+      <div className="admin-ui min-h-screen bg-background px-4 py-10 sm:py-16">
+        <Toaster position="top-right" richColors closeButton />
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+          <div className="flex items-center justify-between gap-4">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="PEARL" className="h-9 w-auto" />
+            ) : (
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white">P</span>
+            )}
+            <form action={signOutAction}>
+              <button type="submit" className="text-sm font-medium text-muted-foreground hover:text-foreground">Sign out</button>
+            </form>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-primary">Step 1 of 1</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Welcome! Let’s set up your profile</h1>
+            <p className="mt-1.5 text-sm text-muted-foreground">Your name is shown to other admins and next to every change you make. You can edit these details any time from <span className="font-medium text-foreground">My profile</span>.</p>
+          </div>
+          <ProfileForm profile={admin.profile} onboarding />
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <>
       <Toaster position="top-right" richColors closeButton />
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-surface/95 px-4 py-3.5 backdrop-blur sm:px-6">
-        <Link href="/admin" className="flex items-center gap-2.5">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-xs font-bold tracking-wide text-white">P</span>
-          <span className="flex flex-col leading-none">
-            <span className="text-sm font-bold tracking-wide text-primary-dark">PEARL</span>
-            <span className="text-[11px] text-muted-foreground">Admin</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-4">
-          <Link href="/" target="_blank" className="hidden items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary sm:flex">
-            View live site <ExternalLink className="size-3.5" aria-hidden="true" />
-          </Link>
-          <div className="flex items-center gap-2.5 border-l border-border pl-4">
-            <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-              {initials(displayName)}
-            </span>
-            <div className="text-sm leading-tight">
-              <p className="font-medium text-foreground">{displayName}</p>
-              <RoleBadge role={role} />
-            </div>
-          </div>
-          <form action={signOutAction}>
-            <SubmitButton variant="ghost" pendingText="Signing out…">
-              Sign out
-            </SubmitButton>
-          </form>
-        </div>
-      </header>
-
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:px-6 md:flex-row md:gap-8 md:py-8">
-        <aside className="shrink-0 md:w-56">
-          <AdminSidebar role={role} sections={sections} />
-        </aside>
-        <main className="min-w-0 flex-1">{children}</main>
-      </div>
-    </div>
+      <AdminShell role={role} sections={sections} displayName={displayName} email={admin.email} signOut={signOutAction} logoUrl={logoUrl}>
+        {children}
+      </AdminShell>
+    </>
   )
 }

@@ -32,6 +32,7 @@ export async function loadBuilderContext(docs: PageDoc[]) {
   return {
     data: renderData,
     theme: config.theme,
+    themeVersion: config.versions.theme ?? 0,
     pages: pages.map((p) => ({ id: p.id, title: p.title, slug: p.slug, status: p.status })),
     savedBlocks: blocks,
     templates,

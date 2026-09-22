@@ -1,4 +1,5 @@
 import { createInsForgeServerClient } from '@/lib/insforge/server'
+import { unwrap } from './data-error'
 import type {
   AboutValue,
   PageContentMap,
@@ -14,10 +15,10 @@ import type {
 
 export async function getPageContent(page: string): Promise<PageContentMap> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('page_content')
     .select('id, page, key, value_type, value, image_key, updated_at, updated_by')
-    .eq('page', page)
+    .eq('page', page), 'getPageContent')
 
   const rows = (data ?? []) as PageContentRow[]
   const map: PageContentMap = {}
@@ -59,34 +60,34 @@ export function latestEdit(map: PageContentMap, keys: string[]): { at: string; b
 
 export async function getResearchAreas(): Promise<ResearchArea[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('research_areas')
     .select('id, title, summary, home_summary, icon_name, image_url, image_key, show_on_home, sort_order, updated_at, updated_by')
     .order('sort_order', { ascending: true })
-    .limit(50)
+    .limit(50), 'getResearchAreas')
 
   return (data ?? []) as ResearchArea[]
 }
 
 export async function getAboutValues(): Promise<AboutValue[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('about_values')
     .select('id, letter, title, body, sort_order, updated_at, updated_by')
     .order('sort_order', { ascending: true })
-    .limit(50)
+    .limit(50), 'getAboutValues')
 
   return (data ?? []) as AboutValue[]
 }
 
 export async function getPartnersByContext(context: string): Promise<Partner[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('partner_placements')
     .select('id, partner_id, context, sort_order, partners(id, name, image_url, image_key)')
     .eq('context', context)
     .order('sort_order', { ascending: true })
-    .limit(100)
+    .limit(100), 'getPartnersByContext')
 
   const rows = (data ?? []) as unknown as PartnerPlacement[]
   return rows.map((row) => row.partners).filter(Boolean)
@@ -94,23 +95,23 @@ export async function getPartnersByContext(context: string): Promise<Partner[]> 
 
 export async function getAllPlacements(): Promise<PartnerPlacement[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('partner_placements')
     .select('id, partner_id, context, sort_order, partners(id, name, image_url, image_key)')
     .order('context', { ascending: true })
     .order('sort_order', { ascending: true })
-    .limit(300)
+    .limit(300), 'getAllPlacements')
 
   return (data ?? []) as unknown as PartnerPlacement[]
 }
 
 export async function getAllPartners(): Promise<Partner[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('partners')
     .select('id, name, image_url, image_key, updated_at, updated_by')
     .order('name', { ascending: true })
-    .limit(200)
+    .limit(200), 'getAllPartners')
 
   return (data ?? []) as Partner[]
 }
@@ -124,25 +125,25 @@ export async function getProjects(publishedOnly = true): Promise<Project[]> {
 
   if (publishedOnly) query = query.eq('published', true)
 
-  const { data } = await query
+  const data = unwrap(await query, 'getProjects')
   return (data ?? []) as Project[]
 }
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('projects').select(PROJECT_COLUMNS).eq('slug', slug).maybeSingle()
+  const data = unwrap(await insforge.database.from('projects').select(PROJECT_COLUMNS).eq('slug', slug).maybeSingle(), 'getProjectBySlug')
 
   return (data as Project) ?? null
 }
 
 export async function getProjectSections(projectId: string): Promise<ProjectSection[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('project_sections')
     .select('id, project_id, heading, body_paragraphs, image_url, image_key, partners_context, sort_order, updated_at, updated_by')
     .eq('project_id', projectId)
     .order('sort_order', { ascending: true })
-    .limit(50)
+    .limit(50), 'getProjectSections')
 
   return (data ?? []) as ProjectSection[]
 }
@@ -151,23 +152,23 @@ const TEAM_MEMBER_COLUMNS = 'id, name, role, image_url, image_key, bio_paragraph
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('team_members')
     .select(TEAM_MEMBER_COLUMNS)
     .eq('active', true)
     .order('sort_order', { ascending: true })
-    .limit(200)
+    .limit(200), 'getTeamMembers')
 
   return (data ?? []) as TeamMember[]
 }
 
 export async function getAllTeamMembers(): Promise<TeamMember[]> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database
+  const data = unwrap(await insforge.database
     .from('team_members')
     .select(TEAM_MEMBER_COLUMNS)
     .order('sort_order', { ascending: true })
-    .limit(200)
+    .limit(200), 'getAllTeamMembers')
 
   return (data ?? []) as TeamMember[]
 }
@@ -176,7 +177,7 @@ export async function getAllTeamMembers(): Promise<TeamMember[]> {
 // updated_by uuid stored on content rows. Admin-only (app_users RLS).
 export async function getUserDirectory(): Promise<UserDirectory> {
   const insforge = await createInsForgeServerClient()
-  const { data } = await insforge.database.from('app_users').select('id, email, full_name').limit(200)
+  const data = unwrap(await insforge.database.from('app_users').select('id, email, full_name').limit(200), 'getUserDirectory')
 
   const map: UserDirectory = {}
   for (const row of (data ?? []) as { id: string; email: string; full_name: string | null }[]) {

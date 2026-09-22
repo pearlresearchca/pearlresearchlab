@@ -1,6 +1,7 @@
-import { getPageContent, image, lines, prose, text } from '@/lib/cms/queries'
+import { getPageContent, image, lines, text } from '@/lib/cms/queries'
+import { richHtml } from '@/lib/cms/rich'
 import { makeNode } from './blocks'
-import { listHtml, n, paragraphsHtml } from './presets'
+import { listHtml, n } from './presets'
 import { uid } from './tree'
 import type { BuilderNode, PageDoc } from './types'
 
@@ -8,7 +9,7 @@ import type { BuilderNode, PageDoc } from './types'
 // from the same content (page_content rows + content collections), laid out
 // to match the original design as closely as the block system allows.
 
-const TINT = '#eaf1ef'
+const TINT = 'var(--tint)'
 
 function pageHero(kicker: string, title: string, intro: string): BuilderNode {
   return n.section({ width: 'boxed', label: 'Page header' }, [n.eyebrow(kicker), n.heading(title, 'h1', 'display'), ...(intro ? [n.text(intro, { size: 'lead', muted: true }, { maxWidth: '760px' })] : [])], {
@@ -43,7 +44,7 @@ async function home(): Promise<PageDoc> {
           {},
           { alignItems: 'center', gap: '76px' }
         ),
-      ], { background: { type: 'gradient', gradientFrom: '#eef4f2', gradientTo: '#f8faf9', gradientAngle: 90 }, padding: { top: '88px', bottom: '72px' } }),
+      ], { background: { type: 'gradient', gradientFrom: 'var(--tint)', gradientTo: 'var(--background)', gradientAngle: 90 }, padding: { top: '88px', bottom: '72px' } }),
 
       n.section({ tone: 'light', label: 'Purpose statement' }, [
         n.columns([[n.eyebrow(text(c, 'statement_eyebrow'))], [n.heading(text(c, 'statement_title'), 'h2', 'default', { fontSize: 'clamp(30px, 4vw, 50px)', lineHeight: '1.15' }), n.link('Discover our approach', '/about')]], { ratio: '1-3' }, { gap: '60px' }),
@@ -94,12 +95,12 @@ async function about(): Promise<PageDoc> {
     version: 1,
     sections: [
       pageHero(text(c, 'hero_kicker'), text(c, 'hero_title'), text(c, 'hero_intro')),
-      n.section({ width: 'narrow', label: 'Mission' }, [n.eyebrow(text(c, 'mission_eyebrow')), n.heading(text(c, 'mission_title')), n.rich(paragraphsHtml(prose(c, 'mission_body')))]),
-      n.section({ width: 'narrow', label: 'Vision' }, [n.eyebrow(text(c, 'vision_eyebrow')), n.heading(text(c, 'vision_title'), 'h2', 'default', { fontSize: 'clamp(28px, 3.6vw, 44px)' }), n.text(text(c, 'vision_body'), { muted: true })], {
+      n.section({ width: 'narrow', label: 'Mission' }, [n.eyebrow(text(c, 'mission_eyebrow')), n.heading(text(c, 'mission_title')), n.rich(richHtml(c, 'mission_body'))]),
+      n.section({ width: 'narrow', label: 'Vision' }, [n.eyebrow(text(c, 'vision_eyebrow')), n.heading(text(c, 'vision_title'), 'h2', 'default', { fontSize: 'clamp(28px, 3.6vw, 44px)' }), n.rich(richHtml(c, 'vision_body'))], {
         background: { type: 'color', color: TINT },
       }),
-      n.section({ label: 'Values' }, [n.eyebrow(text(c, 'values_eyebrow')), n.heading(text(c, 'values_title'), 'h2', 'default', { margin: { bottom: 'md' } }), n.block('values')], { background: { type: 'color', color: '#ffffff' } }),
-      n.section({ label: 'Partners' }, [n.eyebrow(text(c, 'partners_eyebrow')), n.heading(text(c, 'partners_title')), n.text(text(c, 'partners_body'), { muted: true }, { maxWidth: '720px', margin: { bottom: 'md' } }), n.block('partners', { context: 'about', variant: 'grid' })]),
+      n.section({ label: 'Values' }, [n.eyebrow(text(c, 'values_eyebrow')), n.heading(text(c, 'values_title'), 'h2', 'default', { margin: { bottom: 'md' } }), n.block('values')], { background: { type: 'color', color: 'var(--surface)' } }),
+      n.section({ label: 'Partners' }, [n.eyebrow(text(c, 'partners_eyebrow')), n.heading(text(c, 'partners_title')), n.rich(richHtml(c, 'partners_body'), { maxWidth: '720px', margin: { bottom: 'md' } }), n.block('partners', { context: 'about', variant: 'grid' })]),
     ],
   }
 }
@@ -151,7 +152,7 @@ async function team(): Promise<PageDoc> {
         n.block('team', { group: 'tfs', title: 'Transforming Food Systems', eyebrow: 'Current research stream' }),
         n.block('team', { group: 'ift', title: 'Inter-Facility Transfer System', eyebrow: 'Current research stream' }),
         n.block('team', { group: 'past', title: 'Past Contributors', eyebrow: 'Previous PEARL contributors' }),
-      ], { background: { type: 'color', color: '#ffffff' }, padding: { top: '110px', bottom: '110px' } }),
+      ], { background: { type: 'color', color: 'var(--surface)' }, padding: { top: '110px', bottom: '110px' } }),
       n.section({ tone: 'light', label: 'Call to action' }, [
         n.columns([[n.eyebrow(text(c, 'cta_eyebrow')), n.heading(text(c, 'cta_title'))], [n.block('link', { label: 'Start a conversation', link: { href: '/contact' }, arrow: true })]], { ratio: '2-1' }, { alignItems: 'center', gap: '40px' }),
       ], { background: { type: 'color', color: 'var(--primary-dark)' }, padding: { top: '72px', bottom: '72px' } }),
@@ -182,14 +183,14 @@ async function contact(): Promise<PageDoc> {
     version: 1,
     sections: [
       pageHero(text(c, 'hero_kicker'), text(c, 'hero_title'), text(c, 'hero_intro')),
-      n.section({ width: 'narrow', label: 'Community partnerships' }, [n.heading(text(c, 'partnerships_title')), n.rich(paragraphsHtml(prose(c, 'partnerships_intro')))]),
+      n.section({ width: 'narrow', label: 'Community partnerships' }, [n.heading(text(c, 'partnerships_title')), n.rich(richHtml(c, 'partnerships_intro'))]),
       n.section({ label: 'Areas of interest' }, [n.heading(text(c, 'interests_title')), n.rich(listHtml(lines(c, 'interests_list'))), n.text(text(c, 'interests_note'), { muted: true })], {
         background: { type: 'color', color: TINT },
       }),
       n.section({ label: 'How we can connect' }, [
         n.columns([
           [n.heading(text(c, 'connect_title'), 'h2'), n.text(text(c, 'connect_lead')), n.rich(listHtml(lines(c, 'connect_list'))), n.text(text(c, 'connect_note'), { muted: true })],
-          [n.heading(text(c, 'approach_title'), 'h2'), n.rich(paragraphsHtml(prose(c, 'approach_body'))), n.text(text(c, 'approach_note'), { muted: false }, { fontWeight: '700' })],
+          [n.heading(text(c, 'approach_title'), 'h2'), n.rich(richHtml(c, 'approach_body')), n.text(text(c, 'approach_note'), { muted: false }, { fontWeight: '700' })],
         ], {}, { gap: '80px' }),
       ]),
       n.section({ label: 'Contact' }, [
@@ -197,7 +198,7 @@ async function contact(): Promise<PageDoc> {
           [
             [
               n.heading(text(c, 'start_title')),
-              n.rich(paragraphsHtml(prose(c, 'start_body'))),
+              n.rich(richHtml(c, 'start_body')),
               makeNode('contact-info', { props: { useSite: false, address, email: text(c, 'email').trim(), phone: '', hours: text(c, 'hours'), layout: 'row' }, style: { desktop: { margin: { top: 'md' } } } }),
               n.button(text(c, 'cta_label') || 'Send us a message', '#send-a-message'),
             ],
@@ -230,7 +231,7 @@ async function contact(): Promise<PageDoc> {
           { ratio: '2-3' },
           { gap: '100px' }
         ),
-      ], { background: { type: 'color', color: '#ffffff' }, padding: { top: '110px', bottom: '110px' } }),
+      ], { background: { type: 'color', color: 'var(--surface)' }, padding: { top: '110px', bottom: '110px' } }),
     ],
   }
 }

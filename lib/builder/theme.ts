@@ -15,6 +15,8 @@ export const DEFAULT_THEME: ThemeSettings = {
     muted: '#56706e',
     border: '#cbdad6',
     link: '#146b68',
+    tint: '#eaf1ef',
+    footer: '#132d2c',
   },
   typography: {
     headingFont: 'Fraunces',
@@ -42,6 +44,8 @@ export const THEME_COLOR_TOKENS: { key: keyof ThemeSettings['colors']; label: st
   { key: 'muted', label: 'Muted text', cssVar: '--muted-foreground', hint: 'Captions and secondary text' },
   { key: 'border', label: 'Border', cssVar: '--border', hint: 'Lines and dividers' },
   { key: 'link', label: 'Links', cssVar: '--link-color', hint: 'Text links' },
+  { key: 'tint', label: 'Tinted background', cssVar: '--tint', hint: 'Soft bands, page headers, cards' },
+  { key: 'footer', label: 'Footer', cssVar: '--footer-bg', hint: 'Site footer background' },
 ]
 
 // Fonts offered in the pickers. Inter and Fraunces are already self-hosted via
@@ -141,6 +145,9 @@ export function themeCss(theme: ThemeSettings, selector = 'html:root'): string {
     '--muted-foreground': safeCssValue(c.muted),
     '--border': safeCssValue(c.border),
     '--link-color': safeCssValue(c.link),
+    '--tint': safeCssValue(c.tint),
+    '--muted': safeCssValue(c.tint),
+    '--footer-bg': safeCssValue(c.footer),
     '--heading-font': fontStack(t.headingFont, 'serif'),
     '--body-font': fontStack(t.bodyFont, 'sans'),
     '--heading-weight': safeCssValue(t.headingWeight),

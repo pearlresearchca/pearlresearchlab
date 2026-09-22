@@ -9,7 +9,7 @@ import { submitFormAction } from '@/lib/builder/form-actions'
 // reduced-motion via CSS (animations only exist under no-preference).
 export function AnimateOnScroll() {
   useEffect(() => {
-    const els = Array.from(document.querySelectorAll<HTMLElement>('.pb-anim:not(.is-in)'))
+    const els = Array.from(document.querySelectorAll<HTMLElement>('.pb-anim'))
     if (els.length === 0) return
     if (!('IntersectionObserver' in window)) {
       els.forEach((el) => el.classList.add('is-in'))
@@ -18,9 +18,13 @@ export function AnimateOnScroll() {
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
+          const repeat = e.target.classList.contains('pb-anim--repeat')
           if (e.isIntersecting) {
             e.target.classList.add('is-in')
-            io.unobserve(e.target)
+            if (!repeat) io.unobserve(e.target)
+          } else if (repeat && e.boundingClientRect.top > 0) {
+            // Replay when it scrolls back in from below.
+            e.target.classList.remove('is-in')
           }
         }
       },
@@ -170,6 +174,8 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
   const [error, setError] = useState<string | null>(null)
   const doneRef = useRef<HTMLDivElement>(null)
   const uid = useId()
+  // One token per form fill, so a resend after a dropped connection isn't stored twice.
+  const [token] = useState(() => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : ''))
 
   if (state === 'done') {
     return (
@@ -188,6 +194,7 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
     const fd = new FormData(e.currentTarget)
     fd.set('__page', pageId)
     fd.set('__node', nodeId)
+    if (token) fd.set('__token', token)
     try {
       const result = await submitFormAction(fd)
       if ('error' in result) {
@@ -198,7 +205,7 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
       setState('done')
       requestAnimationFrame(() => doneRef.current?.focus())
     } catch {
-      setError('Your message could not be sent. Please try again.')
+      setError('Your message could not be sent. Please check your connection and try again.')
       setState('idle')
     }
   }

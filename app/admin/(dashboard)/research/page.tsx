@@ -1,3 +1,5 @@
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import { FlaskConical } from 'lucide-react'
 import { getPageContent, getResearchAreas, getUserDirectory, text } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
@@ -17,17 +19,8 @@ export default async function ResearchAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <FlaskConical className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Research areas</h1>
-          <p className="text-sm text-muted-foreground">
-            These five areas power both the Research page and the &ldquo;Five connected streams&rdquo; cards on Home.
-          </p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="Research page" description="The Research page hero and the research areas. The areas also power the “Five connected streams” cards on Home." icon={<FlaskConical />} />
+      <CorePageNotice legacyKey="research" label="Research" />
 
       <ActionForm action={updateResearchHeroAction}>
         <AdminCard title="Research page hero">
@@ -70,15 +63,15 @@ export default async function ResearchAdminPage() {
                 <Field label="Short summary (Home page card)" htmlFor={`home_summary-${area.id}`} hint="Leave blank to reuse the full summary.">
                   <TextArea id={`home_summary-${area.id}`} name="home_summary" rows={2} defaultValue={area.home_summary ?? ''} />
                 </Field>
-                <div className="flex flex-wrap items-end gap-4">
+                <div className="flex flex-wrap items-start gap-4">
                   <Field label="Icon name (lucide-react)" htmlFor={`icon-${area.id}`} hint="e.g. HeartPulse, Scale, Leaf, Network" className="min-w-48">
                     <TextInput id={`icon-${area.id}`} name="icon_name" defaultValue={area.icon_name ?? ''} />
                   </Field>
                   <Field label="Sort order" htmlFor={`sort-${area.id}`}>
                     <TextInput id={`sort-${area.id}`} name="sort_order" type="number" defaultValue={area.sort_order} className="w-24" />
                   </Field>
-                  <label className="flex items-center gap-2 pb-2.5 text-sm text-foreground">
-                    <input type="checkbox" name="show_on_home" defaultChecked={area.show_on_home} className="size-4 accent-primary" />
+                  <label className="mt-[26px] flex h-[42px] items-center gap-2 text-sm text-foreground">
+                    <input type="checkbox" name="show_on_home" defaultChecked={area.show_on_home} className="switch" />
                     Show on Home
                   </label>
                 </div>

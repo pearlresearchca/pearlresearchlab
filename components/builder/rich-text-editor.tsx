@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { EditorContent, useEditor, useEditorState, type Editor } from '@tiptap/react'
 import { BubbleMenu } from '@tiptap/react/menus'
 import { Extension } from '@tiptap/react'
@@ -23,6 +24,9 @@ import { safeHref, type LinkValue } from '@/lib/builder/links'
 import { LinkField } from './link-field'
 import { MediaPickerDialog } from './media'
 import { Btn, Dialog, IconBtn, cx, inputClass } from './ui'
+import { CALLOUTS, Callout, INLINE_STYLES, StyleClass, setStyleClass, toggleCallout, unsetStyleClass } from './rich-text-styles'
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from './menu'
+import { Paintbrush } from 'lucide-react'
 
 // Adds a font-weight attribute to TipTap's textStyle mark.
 const FontWeight = Extension.create({
@@ -43,7 +47,15 @@ const FontWeight = Extension.create({
   },
 })
 
-const COLORS = ['#172b2b', '#146b68', '#0d4f4d', '#d9b84d', '#b42318', '#1d4ed8', '#7c3aed', '#56706e', '#ffffff']
+// Theme colours are stored as CSS variables so text follows theme changes.
+const THEME_COLORS = [
+  { value: 'var(--primary)', label: 'Theme primary' },
+  { value: 'var(--primary-dark)', label: 'Theme secondary' },
+  { value: 'var(--accent)', label: 'Theme accent' },
+  { value: 'var(--heading-color)', label: 'Theme headings' },
+  { value: 'var(--muted-foreground)', label: 'Theme soft text' },
+]
+const COLORS = ['#172b2b', '#b42318', '#c2410c', '#15803d', '#1d4ed8', '#7c3aed', '#be185d', '#475569', '#ffffff']
 const HIGHLIGHTS = ['#fbeeb8', '#d7f0e8', '#dbeafe', '#fde2e2', '#ede9fe']
 const SIZES = ['12px', '14px', '16px', '18px', '20px', '24px', '30px', '36px', '48px']
 
@@ -68,6 +80,8 @@ function useEditorExtensions() {
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: false } }),
     Image.configure({ inline: false, allowBase64: false, resize: { enabled: true, alwaysPreserveAspectRatio: true, minWidth: 60, minHeight: 40 } }),
+    StyleClass,
+    Callout,
   ]
 }
 
@@ -80,7 +94,29 @@ function blockType(editor: Editor): string {
 function ColorMenu({ editor, kind, onDone }: { editor: Editor; kind: 'color' | 'highlight'; onDone: () => void }) {
   const list = kind === 'color' ? COLORS : HIGHLIGHTS
   return (
-    <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-lg border border-border bg-surface p-2 shadow-xl" role="menu">
+    <div className="absolute left-0 top-full z-50 mt-1 w-52 rounded-xl border border-border bg-surface p-2.5 shadow-xl" role="menu">
+      {kind === 'color' && (
+        <>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Theme colours</p>
+          <div className="mb-2.5 grid grid-cols-5 gap-1">
+            {THEME_COLORS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                title={c.label}
+                aria-label={c.label}
+                className="size-7 rounded-md border border-black/10 ring-offset-1 hover:ring-2 hover:ring-primary/40"
+                style={{ background: c.value }}
+                onClick={() => {
+                  editor.chain().focus().setColor(c.value).run()
+                  onDone()
+                }}
+              />
+            ))}
+          </div>
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Colours</p>
+        </>
+      )}
       <div className="grid grid-cols-5 gap-1">
         {list.map((c) => (
           <button
@@ -208,7 +244,7 @@ export function RichTextToolbar({ editor, compact = false }: { editor: Editor; c
 
   return (
     <div
-      className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-border bg-surface p-1 font-sans text-foreground shadow-sm"
+      className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-border bg-surface p-1 text-foreground shadow-sm"
       role="toolbar"
       aria-label="Text formatting"
       onMouseDown={(e) => {
@@ -229,6 +265,34 @@ export function RichTextToolbar({ editor, compact = false }: { editor: Editor; c
         <option value="h6">Heading 6</option>
         <option value="small">Small text</option>
       </select>
+      <Menu
+        label="Text styles"
+        width={250}
+        align="start"
+        trigger={(t) => (
+          <button type="button" {...t} className={cx(sel, 'inline-flex items-center gap-1.5 font-semibold')} aria-label="Text styles">
+            <Paintbrush className="size-3.5" /> Styles
+          </button>
+        )}
+      >
+        <MenuLabel>Text styles (select text first)</MenuLabel>
+        {INLINE_STYLES.map((st) => (
+          <MenuItem key={st.cls} onSelect={() => setStyleClass(editor, st.cls)} icon={<span className={cx('block w-8 truncate text-left text-xs', st.cls)}>Aa</span>}>
+            <span className="flex flex-col leading-tight">
+              <span>{st.label}</span>
+              <span className="text-[10px] font-normal text-slate-400">{st.hint}</span>
+            </span>
+          </MenuItem>
+        ))}
+        <MenuItem onSelect={() => unsetStyleClass(editor)} icon={<Eraser />}>Remove text style</MenuItem>
+        <MenuSeparator />
+        <MenuLabel>Boxes</MenuLabel>
+        {CALLOUTS.map((c) => (
+          <MenuItem key={c.variant} onSelect={() => toggleCallout(editor, c.variant)} icon={<span className={cx('block size-4 rounded border-l-4', c.variant === 'info' ? 'border-primary bg-primary/10' : c.variant === 'success' ? 'border-emerald-600 bg-emerald-50' : c.variant === 'warning' ? 'border-amber-500 bg-amber-50' : 'border-slate-400 bg-slate-100')} />}>
+            {c.label}
+          </MenuItem>
+        ))}
+      </Menu>
       {!compact && (
         <>
           <select aria-label="Font" className={cx(sel, 'max-w-28')} value={state.font} onChange={(e) => (e.target.value ? chain().setFontFamily(e.target.value).run() : chain().unsetFontFamily().run())}>
@@ -349,8 +413,8 @@ function SelectionMenu({ editor }: { editor: Editor }) {
   const [colorOpen, setColorOpen] = useState(false)
   return (
     <>
-      <BubbleMenu editor={editor} options={{ placement: 'top' }} shouldShow={({ editor: e, state: s }) => !s.selection.empty && !e.isActive('image') && !e.isActive('codeBlock')}>
-        <div className="flex items-center gap-0.5 rounded-lg border border-border bg-surface p-1 font-sans text-foreground shadow-xl" onMouseDown={(e) => e.preventDefault()}>
+      <BubbleMenu editor={editor} appendTo={() => document.body} options={{ placement: 'top', strategy: 'fixed' }} shouldShow={({ editor: e, state: s }) => !s.selection.empty && !e.isActive('image') && !e.isActive('codeBlock')}>
+        <div className="admin-ui flex items-center gap-0.5 rounded-xl border border-border bg-surface p-1 text-foreground shadow-xl" onMouseDown={(e) => e.preventDefault()}>
           <IconBtn label="Bold" active={state.bold} onClick={() => editor.chain().focus().toggleBold().run()}><Bold /></IconBtn>
           <IconBtn label="Italic" active={state.italic} onClick={() => editor.chain().focus().toggleItalic().run()}><Italic /></IconBtn>
           <IconBtn label="Link" active={state.link} onClick={() => setLinkOpen(true)}><Link2 /></IconBtn>
@@ -375,6 +439,7 @@ export function RichTextEditor({
   className,
   compact = false,
   stickyToolbar = true,
+  toolbarTarget,
 }: {
   html: string
   onChange: (html: string) => void
@@ -382,6 +447,8 @@ export function RichTextEditor({
   className?: string
   compact?: boolean
   stickyToolbar?: boolean
+  // Render the toolbar somewhere else (the builder docks it above the canvas).
+  toolbarTarget?: HTMLElement | null
 }) {
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
@@ -404,6 +471,12 @@ export function RichTextEditor({
     },
   })
 
+  // Follow outside changes (undo/redo, the other editor) while not typing here.
+  useEffect(() => {
+    if (!editor || editor.isFocused) return
+    if (html !== editor.getHTML()) editor.commands.setContent(html, { emitUpdate: false })
+  }, [html, editor])
+
   // Flush pending changes when the editor closes.
   useEffect(() => () => {
     if (timer.current && editor) {
@@ -414,12 +487,15 @@ export function RichTextEditor({
 
   if (!editor) return <div className="pb-rich min-h-[3em] opacity-60" dangerouslySetInnerHTML={{ __html: html }} />
 
+  const toolbar = (
+    <div className={cx('admin-ui', stickyToolbar && !toolbarTarget && 'sticky top-0 z-30')} style={{ fontSize: 14, lineHeight: 1.4, textAlign: 'left', background: 'transparent' }}>
+      <RichTextToolbar editor={editor} compact={compact} />
+    </div>
+  )
   return (
     <div className="pb-rte" onKeyDown={(e) => e.stopPropagation()}>
-      <div className={cx(stickyToolbar && 'sticky top-0 z-30')} style={{ fontSize: 14, lineHeight: 1.4, textAlign: 'left' }}>
-        <RichTextToolbar editor={editor} compact={compact} />
-      </div>
-      <div className="rounded-b-lg border border-t-0 border-dashed border-primary/40 p-2">
+      {toolbarTarget ? createPortal(toolbar, toolbarTarget) : toolbar}
+      <div className={cx('border border-dashed border-primary/50 p-2', toolbarTarget ? 'rounded-lg' : 'rounded-b-lg border-t-0')}>
         <EditorContent editor={editor} />
       </div>
       <SelectionMenu editor={editor} />

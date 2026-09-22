@@ -47,7 +47,7 @@ function Inner({ canManage }: { canManage: boolean }) {
         toast.error(r.error)
         continue
       }
-      if (r.key) await removeStoredFile(r.key).catch(() => undefined)
+      if (r.warning) toast.warning(r.warning)
       lib.setItems((prev) => prev?.filter((p) => p.id !== m.id) ?? null)
     }
     setDeleting(false)
@@ -90,7 +90,7 @@ function Inner({ canManage }: { canManage: boolean }) {
                   {!m.alt && !isVideo(m) && <span className="absolute left-2 top-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">No alt text</span>}
                   {canManage && (
                     <label className="absolute right-2 top-2 flex size-6 cursor-pointer items-center justify-center rounded bg-white/90 shadow">
-                      <input type="checkbox" className="size-4 accent-primary" aria-label={`Select ${m.title || m.filename}`} checked={checked.has(m.id)} onChange={() => setChecked((s) => { const x = new Set(s); if (x.has(m.id)) x.delete(m.id); else x.add(m.id); return x })} />
+                      <input type="checkbox" className="admin-check" aria-label={`Select ${m.title || m.filename}`} checked={checked.has(m.id)} onChange={() => setChecked((s) => { const x = new Set(s); if (x.has(m.id)) x.delete(m.id); else x.add(m.id); return x })} />
                     </label>
                   )}
                 </li>
@@ -153,7 +153,8 @@ function MediaDetails({ item, canManage, onClose, onChange, onAdded, onDelete }:
         await removeStoredFile(data.key)
         throw new Error(r.error)
       }
-      await removeStoredFile(r.oldKey).catch(() => undefined)
+      if (r.oldKey) await removeStoredFile(r.oldKey).catch((err) => console.error('old file cleanup failed', err))
+      if (r.warning) toast.warning(r.warning)
       onChange({ ...item, url: data.url, key: data.key, filename: file.name, mime_type: f.type, size_bytes: f.size, width: dims?.width ?? null, height: dims?.height ?? null })
       toast.success(r.updated ? `File replaced and updated in ${r.updated} place${r.updated > 1 ? 's' : ''}` : 'File replaced')
     } catch (err) {

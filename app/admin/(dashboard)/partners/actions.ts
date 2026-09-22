@@ -22,7 +22,12 @@ export async function addPartnerAction(formData: FormData): Promise<ActionResult
     const { data: uploaded, error } = await insforge.storage.from('site-images').uploadAuto(file)
     if (error || !uploaded) throw new Error(error?.message ?? 'Upload failed.')
 
-    check(await insforge.database.from('partners').insert([{ name, image_url: uploaded.url, image_key: uploaded.key }]))
+    const inserted = await insforge.database.from('partners').insert([{ name, image_url: uploaded.url, image_key: uploaded.key }])
+    if (inserted.error) {
+      // Don't leave an orphaned logo file behind when the record can't be saved.
+      await insforge.storage.from('site-images').remove(uploaded.key).catch(() => undefined)
+      check(inserted)
+    }
     revalidate()
   })
 }
@@ -47,7 +52,11 @@ export async function deletePartnerAction(id: string, imageKey: string): Promise
   return withErrorHandling(async () => {
     const insforge = await createInsForgeServerClient()
     check(await insforge.database.from('partners').delete().eq('id', id))
-    if (imageKey) await insforge.storage.from('site-images').remove(imageKey)
+    if (imageKey) {
+      const removed = await insforge.storage.from('site-images').remove(imageKey)
+      // The partner is gone either way; an orphaned file only wastes space.
+      if (removed.error) console.error('[partners] logo file cleanup failed', imageKey, removed.error)
+    }
     revalidate()
   })
 }

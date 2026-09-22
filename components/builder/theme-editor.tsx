@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { RotateCcw } from 'lucide-react'
@@ -8,6 +8,8 @@ import { saveSettingAction } from '@/lib/builder/actions'
 import { DEFAULT_THEME, FONT_OPTIONS, THEME_COLOR_TOKENS, googleFontsHref, isValidFontName, themeCss } from '@/lib/builder/theme'
 import type { ThemeSettings } from '@/lib/builder/types'
 import { ColorField, contrastRatio } from './color-field'
+import { ThemePresetGallery } from './theme-presets'
+import { applyPreset } from '@/lib/builder/theme-presets'
 import { UnitInput } from './style-controls'
 import { Btn, ConfirmProvider, FieldRow, Segmented, Spinner, Toggle, cx, inputClass, useConfirm } from './ui'
 
@@ -35,7 +37,7 @@ function FontSelect({ value, onChange, label }: { value: string; onChange: (v: s
   )
 }
 
-export function ThemeEditor(props: { initial: ThemeSettings }) {
+export function ThemeEditor(props: { initial: ThemeSettings; version: number }) {
   return (
     <ConfirmProvider>
       <Inner {...props} />
@@ -43,8 +45,9 @@ export function ThemeEditor(props: { initial: ThemeSettings }) {
   )
 }
 
-function Inner({ initial }: { initial: ThemeSettings }) {
+function Inner({ initial, version }: { initial: ThemeSettings; version: number }) {
   const router = useRouter()
+  const versionRef = useRef(version)
   const confirm = useConfirm()
   const [theme, setTheme] = useState(initial)
   const [saving, setSaving] = useState(false)
@@ -58,17 +61,30 @@ function Inner({ initial }: { initial: ThemeSettings }) {
 
   async function save() {
     setSaving(true)
-    const r = await saveSettingAction('theme', theme)
+    const r = await saveSettingAction('theme', theme, versionRef.current)
     setSaving(false)
     if ('error' in r) return toast.error(r.error)
+    versionRef.current = r.version
     toast.success('Theme saved — the website now uses these styles')
     router.refresh()
   }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm xl:col-span-2">
+          <h2 className="text-base font-semibold">Theme presets</h2>
+          <p className="mb-4 text-sm text-muted-foreground">Pick a ready-made look for the whole website. Pages and templates use theme colours, so everything updates together. Nothing changes on the live site until you save.</p>
+          <ThemePresetGallery
+            theme={theme}
+            onApply={(preset, withStyle) => {
+              setTheme((t) => applyPreset(t, preset, withStyle))
+              toast.info(`“${preset.name}” previewed — press “Save theme” to apply it to the website.`)
+            }}
+          />
+        </section>
+
       <div className="flex flex-col gap-6">
-        <section className="rounded-xl border border-border bg-surface p-5">
+        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 className="text-base font-semibold">Colours</h2>
           <p className="mb-4 text-sm text-muted-foreground">Blocks that use a theme colour update automatically when you change it here.</p>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -82,7 +98,7 @@ function Inner({ initial }: { initial: ThemeSettings }) {
           {buttonContrast !== null && buttonContrast < 4.5 && <p className="mt-1 text-sm text-amber-700">White button text on the primary colour has low contrast ({buttonContrast.toFixed(1)}:1). Choose a darker primary colour.</p>}
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-5">
+        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 className="mb-4 text-base font-semibold">Typography</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FontSelect label="Heading font" value={theme.typography.headingFont} onChange={(v) => set('typography', { headingFont: v })} />
@@ -109,7 +125,7 @@ function Inner({ initial }: { initial: ThemeSettings }) {
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-5">
+        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 className="mb-4 text-base font-semibold">Buttons, cards & forms</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FieldRow label="Button corners"><UnitInput label="Button corner radius" value={theme.buttons.radius} onChange={(v) => set('buttons', { radius: v ?? '0px' })} units={['px', 'rem']} /></FieldRow>
@@ -131,7 +147,7 @@ function Inner({ initial }: { initial: ThemeSettings }) {
           </div>
         </section>
 
-        <section className="rounded-xl border border-border bg-surface p-5">
+        <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
           <h2 className="mb-4 text-base font-semibold">Layout & spacing</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FieldRow label={`Content width: ${theme.layout.containerWidth}px`} hint="Maximum width of boxed sections on large screens.">
@@ -149,7 +165,7 @@ function Inner({ initial }: { initial: ThemeSettings }) {
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Live preview</p>
         {fonts && <link rel="stylesheet" href={fonts} />}
         <style dangerouslySetInnerHTML={{ __html: themeCss(theme, '.theme-preview') }} />
-        <div className="theme-preview pb-page overflow-hidden rounded-xl border border-border" style={{ background: 'var(--background)' }}>
+        <div className="theme-preview pb-page overflow-hidden rounded-2xl border border-border shadow-sm" style={{ background: 'var(--background)' }}>
           <div className="flex flex-col gap-3 p-6">
             <p className="pb-heading pb-heading--eyebrow">Eyebrow label</p>
             <h2 className="pb-heading pb-heading--h2" style={{ fontSize: 'calc(var(--pb-base-size) * 2)' }}>Heading in your theme</h2>

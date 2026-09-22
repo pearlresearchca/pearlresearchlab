@@ -8,7 +8,7 @@ import type { BuilderNode, PageDoc } from './types'
 
 const preset = (key: string) => SECTION_PRESETS.find((p) => p.key === key)!.build()
 const doc = (...sections: BuilderNode[]): PageDoc => ({ version: 1, sections })
-const TINT = '#eaf1ef'
+const TINT = 'var(--tint)'
 const PH = 'Placeholder photo — replace with your own'
 
 export type TemplateCategory = 'basic' | 'landing' | 'about' | 'services' | 'contact' | 'blog' | 'portfolio' | 'team' | 'events' | 'help' | 'research' | 'careers'
@@ -45,7 +45,7 @@ function imageHero(eyebrow: string, title: string, intro: string, cta: string, h
     n.text(intro, { size: 'lead' }, { maxWidth: '680px' }),
     n.row([n.button(cta, href, 'light'), n.link('Learn more', '#details')], { justifyContent: 'center', margin: { top: 'sm' } }),
   ], {
-    background: { type: 'image', image: IMG, imagePosition: 'center', imageSize: 'cover', overlayColor: '#0d2f2e', overlayOpacity: 0.65, color: '#0d4f4d' },
+    background: { type: 'image', image: IMG, imagePosition: 'center', imageSize: 'cover', overlayColor: 'var(--primary-dark)', overlayOpacity: 0.78, color: 'var(--primary-dark)' },
     minHeight: '560px',
   })
 }

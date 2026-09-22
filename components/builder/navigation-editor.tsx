@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Eye, EyeOff, GripVertical, IndentDecrease, IndentIncrease, Plus, Trash2 } from 'lucide-react'
@@ -53,8 +53,10 @@ function depthOf(node: NavItem): number {
 
 const BUILTIN = ['/', '/about', '/research', '/projects', '/team', '/contact']
 
-export function NavigationEditor({ initial, pages }: { initial: NavItem[]; pages: PageOption[] }) {
+export function NavigationEditor({ initial, pages, version }: { initial: NavItem[]; pages: PageOption[]; version: number }) {
   const router = useRouter()
+  // Version of the saved menu this editor started from (conflict detection).
+  const versionRef = useRef(version)
   const [items, setItems] = useState<NavItem[]>(initial)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
@@ -97,9 +99,10 @@ export function NavigationEditor({ initial, pages }: { initial: NavItem[]; pages
 
   async function save() {
     setSaving(true)
-    const r = await saveSettingAction('navigation', { items })
+    const r = await saveSettingAction('navigation', { items }, versionRef.current)
     setSaving(false)
     if ('error' in r) return toast.error(r.error)
+    versionRef.current = r.version
     toast.success('Navigation saved — the menu is updated on every page')
     setDirty(false)
     router.refresh()

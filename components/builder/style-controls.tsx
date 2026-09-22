@@ -476,25 +476,6 @@ export function StyleControls({ node, device, onStyle, onNode, groups }: Props &
         </Collapsible>
       )}
 
-      {has('animation') && (
-        <Collapsible title="Animation" defaultOpen={false}>
-          <FieldRow label="Entrance effect" hint="Plays once as the block scrolls into view. Visitors who prefer reduced motion won't see it.">
-            <select className={inputClass} value={node.animation?.type ?? 'none'} onChange={(e) => onNode((n) => ({ ...n, animation: e.target.value === 'none' ? undefined : { duration: 600, delay: 0, ...n.animation, type: e.target.value as 'fade' } }))}>
-              <option value="none">None</option>
-              <option value="fade">Fade in</option>
-              <option value="slide-up">Slide up</option>
-              <option value="slide-left">Slide in from left</option>
-              <option value="zoom">Zoom in</option>
-            </select>
-          </FieldRow>
-          {node.animation?.type && (
-            <div className="grid grid-cols-2 gap-2">
-              <FieldRow label="Duration (ms)"><input className={inputClass} inputMode="numeric" value={node.animation.duration ?? 600} onChange={(e) => onNode((n) => ({ ...n, animation: { ...n.animation, duration: Number(e.target.value.replace(/\D/g, '')) || 0 } }))} /></FieldRow>
-              <FieldRow label="Delay (ms)"><input className={inputClass} inputMode="numeric" value={node.animation.delay ?? 0} onChange={(e) => onNode((n) => ({ ...n, animation: { ...n.animation, delay: Number(e.target.value.replace(/\D/g, '')) || 0 } }))} /></FieldRow>
-            </div>
-          )}
-        </Collapsible>
-      )}
     </div>
   )
 }

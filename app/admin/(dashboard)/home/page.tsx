@@ -1,3 +1,5 @@
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import Link from 'next/link'
 import { Home as HomeIcon, Image as ImageIcon, Sparkles, Users } from 'lucide-react'
 import { getPageContent, getUserDirectory, latestEdit, text } from '@/lib/cms/queries'
@@ -22,19 +24,8 @@ export default async function HomeAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <HomeIcon className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Home page</h1>
-          <p className="text-sm text-muted-foreground">
-            Research stream cards live on{' '}
-            <Link href="/admin/research" className="font-medium text-primary">Research areas</Link>. The partner strip lives on{' '}
-            <Link href="/admin/partners" className="font-medium text-primary">Partner logos</Link>.
-          </p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="Home page" description="Text and images of the homepage. Research cards come from Research areas; logos from Partner logos." icon={<HomeIcon />} />
+      <CorePageNotice legacyKey="home" label="Home" />
 
       <AdminCard title="Images" icon={<ImageIcon className="size-4" aria-hidden="true" />}>
         <div className="flex flex-wrap gap-8">
@@ -140,7 +131,8 @@ export default async function HomeAdminPage() {
           </div>
         </AdminCard>
 
-        <div className="sticky bottom-4 flex justify-end rounded-lg border border-border bg-surface/95 p-3 shadow-lg backdrop-blur">
+        <div className="sticky bottom-4 z-10 ml-auto flex w-fit items-center gap-4 rounded-xl border border-border bg-surface py-2 pl-4 pr-2 shadow-[0_12px_32px_-12px_rgba(15,23,42,.35)]">
+          <span className="hidden text-xs text-muted-foreground sm:inline">Saves every section above</span>
           <SubmitButton>Save changes</SubmitButton>
         </div>
       </ActionForm>

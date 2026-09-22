@@ -1,3 +1,5 @@
+import { PageHeader } from '@/components/admin/page-header'
+import { CorePageNotice } from '@/components/admin/core-page-notice'
 import Link from 'next/link'
 import { ChevronRight, FolderKanban } from 'lucide-react'
 import { getPageContent, getProjects, getUserDirectory, latestEdit, text } from '@/lib/cms/queries'
@@ -18,15 +20,8 @@ export default async function ProjectsAdminPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <FolderKanban className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">Projects</h1>
-          <p className="text-sm text-muted-foreground">Click a project to edit its full page and sections.</p>
-        </div>
-      </div>
+      <PageHeader group="Core pages" title="Projects page" description="The Projects page hero and each project. Click a project to edit its full page and sections." icon={<FolderKanban />} />
+      <CorePageNotice legacyKey="projects" label="Projects" />
 
       <ActionForm action={updateProjectsHeroAction}>
         <AdminCard title="Projects page hero" action={<LastEdited at={heroEdit?.at} by={heroEdit?.by} users={users} />}>

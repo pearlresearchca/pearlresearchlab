@@ -18,8 +18,8 @@ export const n = {
   text(text: string, props: Record<string, any> = {}, desktop?: Style) {
     return makeNode('paragraph', { props: { text, size: 'normal', muted: false, ...props }, style: desktop ? { desktop } : undefined })
   },
-  rich(html: string) {
-    return makeNode('richtext', { props: { html } })
+  rich(html: string, desktop?: Style) {
+    return makeNode('richtext', { props: { html }, style: desktop ? { desktop } : undefined })
   },
   button(label: string, href: string, variant = 'primary', extra: Record<string, any> = {}) {
     return makeNode('button', { props: { label, link: { href } as LinkValue, variant, size: 'md', align: 'left', icon: true, ...extra } })
@@ -66,9 +66,9 @@ export function listHtml(items: string[]): string {
   return `<ul>${items.map((i) => `<li><p>${escapeHtml(i)}</p></li>`).join('')}</ul>`
 }
 
-const TINT = '#eaf1ef'
+const TINT = 'var(--tint)'
 // Placeholder photo shipped in /public; admins swap it for their own images.
-export const IMG = '/placeholder.jpg'
+export const IMG = '/builder/placeholder.svg'
 
 export type Preset = { key: string; label: string; description: string; icon: string; build: () => BuilderNode }
 
@@ -94,7 +94,7 @@ export const SECTION_PRESETS: Preset[] = [
           {},
           { alignItems: 'center', gap: '64px' }
         ),
-      ], { background: { type: 'gradient', gradientFrom: '#eef4f2', gradientTo: '#f8faf9', gradientAngle: 90 } }),
+      ], { background: { type: 'gradient', gradientFrom: 'var(--tint)', gradientTo: 'var(--background)', gradientAngle: 90 } }),
   },
   {
     key: 'page-header',
@@ -333,6 +333,6 @@ SECTION_PRESETS.push(
             ],
           },
         }),
-      ], { background: { type: 'color', color: '#eaf1ef' } }),
+      ], { background: { type: 'color', color: 'var(--tint)' } }),
   }
 )
