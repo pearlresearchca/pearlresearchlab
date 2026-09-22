@@ -2,29 +2,91 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowUpRight, Menu, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { ArrowUpRight, ChevronDown, Menu, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Reveal } from './reveal'
+import { SocialIcon, SOCIAL_LABELS } from './builder-render/icons'
+import type { FooterSettings, HeaderSettings, SiteSettings } from '@/lib/builder/types'
 
-function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
+// Navigation items with hrefs already resolved on the server (page links
+// follow page URL changes automatically).
+export type ResolvedNavItem = { id: string; label: string; href: string; newTab?: boolean; children?: ResolvedNavItem[] }
+
+function isActive(pathname: string, item: ResolvedNavItem): boolean {
+  if (item.href === pathname) return true
+  return (item.children ?? []).some((c) => isActive(pathname, c))
+}
+
+function NavLink({ item, className, onNavigate, children }: { item: ResolvedNavItem; className?: string; onNavigate: () => void; children: React.ReactNode }) {
+  const external = /^https?:\/\//.test(item.href)
+  if (external || item.newTab) {
+    return (
+      <a href={item.href} className={className} onClick={onNavigate} {...(item.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+        {children}
+      </a>
+    )
+  }
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.38-1.85 3.6 0 4.27 2.37 4.27 5.46zM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56z" />
-    </svg>
+    <Link href={item.href} className={className} onClick={onNavigate}>
+      {children}
+    </Link>
   )
 }
 
-const nav = [
-  ['About', '/about'],
-  ['Research', '/research'],
-  ['Projects', '/projects'],
-  ['Team', '/team'],
-  ['Contact', '/contact'],
-]
+function Dropdown({ item, index, pathname, showNumbers, onNavigate }: { item: ResolvedNavItem; index: number; pathname: string; showNumbers: boolean; onNavigate: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-const LINKEDIN_URL = 'https://www.linkedin.com/company/pearl-population-health-equity-advocacy-research-lab/'
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
 
-export function SiteHeader({ logoUrl }: { logoUrl: string }) {
+  return (
+    <div className="nav-dropdown" ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <div className="nav-dropdown-trigger">
+        <NavLink item={item} className={isActive(pathname, item) ? 'active' : ''} onNavigate={onNavigate}>
+          {showNumbers && <span className="nav-index" aria-hidden="true">0{index + 1}</span>}
+          {item.label}
+        </NavLink>
+        <button type="button" className="nav-dropdown-toggle" aria-expanded={open} aria-label={`Show ${item.label} submenu`} onClick={() => setOpen(!open)}>
+          <ChevronDown aria-hidden="true" />
+        </button>
+      </div>
+      <div className={open ? 'nav-dropdown-menu is-open' : 'nav-dropdown-menu'}>
+        {item.children!.map((child) => (
+          <div key={child.id}>
+            <NavLink item={child} className={pathname === child.href ? 'active' : ''} onNavigate={onNavigate}>
+              {child.label}
+            </NavLink>
+            {child.children && child.children.length > 0 && (
+              <div className="nav-dropdown-nested">
+                {child.children.map((g) => (
+                  <NavLink key={g.id} item={g} className={pathname === g.href ? 'active' : ''} onNavigate={onNavigate}>
+                    {g.label}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function SiteHeader({ logoUrl, nav, header, site }: { logoUrl: string; nav: ResolvedNavItem[]; header: HeaderSettings; site: SiteSettings }) {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -45,51 +107,138 @@ export function SiteHeader({ logoUrl }: { logoUrl: string }) {
     }
   }, [open])
 
+  const close = () => setOpen(false)
+  const [tagTop, ...tagRest] = (header.tagline || '').split('\n')
+  const classes = ['site-header', scrolled ? 'is-scrolled' : '', header.sticky === false ? 'is-static' : '', `header-layout-${header.layout ?? 'inline'}`].filter(Boolean).join(' ')
+
   return (
-    <header className={scrolled ? 'site-header is-scrolled' : 'site-header'}>
+    <header className={classes}>
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <div className="site-container header-inner">
-        <Link href="/" className="brand" onClick={() => setOpen(false)} aria-label="PEARL home">
-          {logoUrl && <img src={logoUrl} alt="PEARL logo" className="brand-mark" />}
-          <span className="brand-copy"><strong>PEARL</strong><span>Public Health Equity<br />Advocacy Research Lab</span></span>
+        <Link href="/" className="brand" onClick={close} aria-label={`${header.siteName || site.shortName} home`}>
+          {header.showLogo && logoUrl && <img src={logoUrl} alt="" className="brand-mark" />}
+          {header.showSiteName && (
+            <span className="brand-copy">
+              <strong>{header.siteName}</strong>
+              {header.tagline && (
+                <span>
+                  {tagTop}
+                  {tagRest.map((line) => (
+                    <span key={line} style={{ display: 'block', margin: 0, fontSize: 'inherit' }}>{line}</span>
+                  ))}
+                </span>
+              )}
+            </span>
+          )}
         </Link>
         <nav className={open ? 'desktop-nav mobile-open' : 'desktop-nav'} aria-label="Primary navigation">
-          {nav.map(([label, href], i) => (
-            <Link key={href} href={href} className={pathname === href ? 'active' : ''} onClick={() => setOpen(false)}>
-              <span className="nav-index" aria-hidden="true">0{i + 1}</span>{label}
+          {nav.map((item, i) =>
+            item.children && item.children.length > 0 ? (
+              <Dropdown key={item.id} item={item} index={i} pathname={pathname} showNumbers={header.showNumbers} onNavigate={close} />
+            ) : (
+              <NavLink key={item.id} item={item} className={isActive(pathname, item) ? 'active' : ''} onNavigate={close}>
+                {header.showNumbers && <span className="nav-index" aria-hidden="true">0{i + 1}</span>}
+                {item.label}
+              </NavLink>
+            )
+          )}
+          {header.showContact && site.contactEmail && (
+            <a href={`mailto:${site.contactEmail}`} className="header-contact">{site.contactEmail}</a>
+          )}
+          {header.showSocial && site.social.length > 0 && (
+            <span className="header-social">
+              {site.social.map((s) => (
+                <a key={s.id} href={s.platform === 'email' ? `mailto:${s.url}` : s.url} target="_blank" rel="noopener noreferrer" aria-label={SOCIAL_LABELS[s.platform] ?? s.platform}>
+                  <SocialIcon platform={s.platform} size={18} />
+                </a>
+              ))}
+            </span>
+          )}
+          {header.showCta && header.ctaLabel && (
+            <Link href={header.ctaUrl || '/contact'} className="header-cta" onClick={close}>
+              {header.ctaLabel} <ArrowUpRight aria-hidden="true" />
             </Link>
-          ))}
-          <Link href="/contact" className="header-cta" onClick={() => setOpen(false)}>Work with us <ArrowUpRight aria-hidden="true" /></Link>
+          )}
         </nav>
-        <button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>{open ? <X /> : <Menu />}</button>
+        <button className="menu-button" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
+          {open ? <X /> : <Menu />}
+        </button>
       </div>
     </header>
   )
 }
 
-export function SiteFooter({ blurb, tagline, copyright }: { blurb: string; tagline: string; copyright: string }) {
+export function SiteFooter({ footer, nav, site }: { footer: FooterSettings; nav: ResolvedNavItem[]; site: SiteSettings }) {
+  const style = {
+    ...(footer.background ? { background: footer.background } : {}),
+    ...(footer.textColor ? { color: footer.textColor } : {}),
+  }
   return (
-    <footer className="site-footer">
-      <div className="site-container footer-grid">
-        <div>
-          <Link href="/" className="footer-brand">PEARL<span>Public Health Equity<br />Advocacy Research Lab</span></Link>
-          <p>{blurb}</p>
-          <a className="footer-social" href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer" aria-label="PEARL on LinkedIn">
-            <LinkedinIcon aria-hidden="true" />
-          </a>
-        </div>
-        <div>
-          <p className="eyebrow">Explore</p>
-          {nav.slice(0, 4).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
-        </div>
-        <div>
-          <p className="eyebrow">Connect</p>
-          <p>St. Francis Xavier University<br />Antigonish, Nova Scotia</p>
-          <Link href="/contact">Start a conversation <ArrowUpRight aria-hidden="true" /></Link>
-        </div>
+    <footer className="site-footer" style={style}>
+      <div className="site-container footer-grid" style={{ gridTemplateColumns: footer.columns.length === 3 ? undefined : `repeat(${Math.max(1, footer.columns.length)}, minmax(0, 1fr))` }}>
+        {footer.columns.map((col) => (
+          <div key={col.id}>
+            {col.kind === 'brand' ? (
+              <>
+                <Link href="/" className="footer-brand">
+                  {site.shortName}
+                  <span style={{ whiteSpace: 'pre-line' }}>{col.title || 'Public Health Equity\nAdvocacy Research Lab'}</span>
+                </Link>
+                {col.text && <p>{col.text}</p>}
+                <span className="footer-socials">
+                  {site.social.map((s) => (
+                    <a key={s.id} className="footer-social" href={s.platform === 'email' ? `mailto:${s.url}` : s.url} target="_blank" rel="noopener noreferrer" aria-label={`${site.shortName} on ${SOCIAL_LABELS[s.platform] ?? s.platform}`}>
+                      <SocialIcon platform={s.platform} size={20} />
+                    </a>
+                  ))}
+                </span>
+              </>
+            ) : (
+              <>
+                {col.title && <p className="eyebrow">{col.title}</p>}
+                {col.kind === 'text' && col.text && <p style={{ whiteSpace: 'pre-line' }}>{col.text}</p>}
+                {col.kind === 'contact' && (
+                  <>
+                    {col.text && <p style={{ whiteSpace: 'pre-line' }}>{col.text}</p>}
+                    {site.contactEmail && <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>}
+                    {site.phone && <a href={`tel:${site.phone.replace(/[^\d+]/g, '')}`}>{site.phone}</a>}
+                  </>
+                )}
+                {col.kind === 'social' && (
+                  <span className="footer-socials">
+                    {site.social.map((s) => (
+                      <a key={s.id} className="footer-social" href={s.platform === 'email' ? `mailto:${s.url}` : s.url} target="_blank" rel="noopener noreferrer" aria-label={SOCIAL_LABELS[s.platform] ?? s.platform}>
+                        <SocialIcon platform={s.platform} size={20} />
+                      </a>
+                    ))}
+                  </span>
+                )}
+                {col.kind === 'newsletter' && (
+                  <>
+                    {col.text && <p>{col.text}</p>}
+                    <Link href="/contact">Get in touch <ArrowUpRight aria-hidden="true" /></Link>
+                  </>
+                )}
+                {col.kind === 'links' && col.useNavigation &&
+                  nav.slice(0, 6).map((item) => (
+                    <Link key={item.id} href={item.href}>{item.label}</Link>
+                  ))}
+                {(col.kind === 'links' || col.kind === 'contact') &&
+                  (col.links ?? []).map((l) =>
+                    /^https?:\/\//.test(l.url) ? (
+                      <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer">{l.label} <ArrowUpRight aria-hidden="true" /></a>
+                    ) : (
+                      <Link key={l.id} href={l.url || '/'}>{l.label} {col.kind === 'contact' && <ArrowUpRight aria-hidden="true" />}</Link>
+                    )
+                  )}
+              </>
+            )}
+          </div>
+        ))}
       </div>
       <div className="site-container footer-bottom">
-        <span>{copyright}</span>
-        <span>{tagline}</span>
+        <span>{footer.copyright}</span>
+        <span>{footer.tagline}</span>
       </div>
     </footer>
   )

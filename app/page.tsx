@@ -6,10 +6,19 @@ import { Reveal } from '@/components/reveal'
 import { HeroTilt } from '@/components/hero-tilt'
 import { PartnerLogoMarquee } from '@/components/partner-logos'
 import { getPageContent, getPartnersByContext, getResearchAreas, image, text } from '@/lib/cms/queries'
+import { livePageMetadata, renderLivePage } from '@/lib/builder/public'
 
 const ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network }
 
+export function generateMetadata() {
+  return livePageMetadata({ legacyKey: 'home' })
+}
+
 export default async function HomePage() {
+  // Published page-builder version wins; otherwise the original homepage.
+  const builder = await renderLivePage({ legacyKey: 'home' })
+  if (builder) return builder
+
   const [content, streams, partners] = await Promise.all([
     getPageContent('home'),
     getResearchAreas(),

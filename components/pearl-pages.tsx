@@ -1,4 +1,5 @@
 import { ArrowLink, PageHero, SectionHeading } from './site-shell'
+import { ProjectFeatureView, TeamCard, TeamGroup } from './site-views'
 import { PageFrame } from './page-frame'
 import { ContactForm } from './contact-form'
 import { Reveal } from './reveal'
@@ -15,7 +16,7 @@ import {
   prose,
   text,
 } from '@/lib/cms/queries'
-import type { Project, TeamGroupKey, TeamMember } from '@/lib/cms/types'
+import type { Partner, Project, ProjectSection, TeamGroupKey, TeamMember } from '@/lib/cms/types'
 
 export async function AboutPage() {
   const [content, values, partners] = await Promise.all([
@@ -116,103 +117,11 @@ export async function ResearchPage() {
 }
 
 async function ProjectFeature({ project, index }: { project: Project; index: number }) {
-  const [sections, topPartners] = await Promise.all([
-    getProjectSections(project.id),
-    project.partners_context ? getPartnersByContext(project.partners_context) : Promise.resolve([]),
-  ])
-
-  return (
-    <section className={index === 0 ? 'project-feature-section project-feature-primary' : 'project-feature-section'}>
-      <Reveal className="site-container project-feature-header">
-        <div className="project-header-meta">
-          <span className="project-index">{project.index_label}</span>
-          <span>{project.category_label}</span>
-        </div>
-        <h2>{project.title}</h2>
-        {project.project_name && <p className="project-name">{project.project_name}</p>}
-        {project.subtitle && <p className="project-subtitle">{project.subtitle}</p>}
-        {project.meta_line.length > 0 && (
-          <div className="project-header-line" aria-hidden="true">
-            {project.meta_line.map((m) => <span key={m}>{m}</span>)}
-          </div>
-        )}
-      </Reveal>
-
-      {project.banner_image_url && (
-        <Reveal className="site-container project-banner-wrap" delay={80}>
-          <img className="project-banner" src={project.banner_image_url} alt={project.title} />
-        </Reveal>
-      )}
-
-      {project.intro_paragraphs.length > 0 && (
-        <Reveal className="site-container project-feature-intro prose" delay={120}>
-          {project.intro_paragraphs.map((p) => <p key={p}>{p}</p>)}
-        </Reveal>
-      )}
-
-      {topPartners.length > 0 && (
-        <Reveal className="site-container" delay={160}>
-          <PartnerLogoRow logos={topPartners} />
-        </Reveal>
-      )}
-
-      <div className="site-container">
-        {sections.map((s, i) => {
-          const imageIndex = sections.slice(0, i).filter((prev) => prev.image_url).length
-          return (
-            <SectionRow
-              key={s.id}
-              heading={s.heading}
-              body={s.body_paragraphs}
-              image={s.image_url}
-              reverse={imageIndex % 2 === 1}
-              partnersContext={s.partners_context}
-              delay={i * 60}
-            />
-          )
-        })}
-        <Reveal className="project-feature-cta">
-          <ArrowLink href="/contact">Discuss this project</ArrowLink>
-        </Reveal>
-      </div>
-    </section>
-  )
-}
-
-async function SectionRow({
-  heading,
-  body,
-  image,
-  reverse,
-  partnersContext,
-  delay,
-}: {
-  heading: string
-  body: string[]
-  image: string | null
-  reverse: boolean
-  partnersContext: string | null
-  delay: number
-}) {
-  const logos = partnersContext ? await getPartnersByContext(partnersContext) : []
-  const rowClass = !image ? 'research-row research-row-solo' : reverse ? 'research-row research-row-reverse' : 'research-row'
-
-  return (
-    <div>
-      <Reveal className={rowClass} delay={delay}>
-        <div className="research-copy">
-          <h3>{heading}</h3>
-          {body.map((p) => <p key={p}>{p}</p>)}
-        </div>
-        {image && <img src={image} alt={heading} />}
-      </Reveal>
-      {logos.length > 0 && (
-        <Reveal delay={delay + 40}>
-          <PartnerLogoRow logos={logos} />
-        </Reveal>
-      )}
-    </div>
-  )
+  const sections = await getProjectSections(project.id)
+  const contexts = [project.partners_context, ...sections.map((s) => s.partners_context)].filter((c): c is string => !!c)
+  const lists = await Promise.all(contexts.map((c) => getPartnersByContext(c)))
+  const partners: Record<string, Partner[]> = Object.fromEntries(contexts.map((c, i) => [c, lists[i]]))
+  return <ProjectFeatureView project={project} sections={sections} partners={partners} index={index} />
 }
 
 export async function ProjectsPage() {
@@ -243,37 +152,6 @@ const GROUPS: { key: TeamGroupKey; title: string; past?: boolean }[] = [
   { key: 'ift', title: 'Inter-Facility Transfer System' },
   { key: 'past', title: 'Past Contributors', past: true },
 ]
-
-function TeamCard({ member, delay = 0, reverse = false }: { member: TeamMember; delay?: number; reverse?: boolean }) {
-  return (
-    <Reveal className={reverse ? 'team-row team-row-reverse' : 'team-row'} delay={delay}>
-      <div className="team-photo-frame">
-        {member.image_url && <img src={member.image_url} alt={`${member.name}, ${member.role}`} />}
-      </div>
-      <div className="team-card-content">
-        <p className="role-tag">{member.role}</p>
-        <h2>{member.name}</h2>
-        {member.bio_paragraphs.map((p) => <p key={p}>{p}</p>)}
-      </div>
-    </Reveal>
-  )
-}
-
-function TeamGroup({ title, members, past = false }: { title: string; members: TeamMember[]; past?: boolean }) {
-  if (members.length === 0) return null
-  return (
-    <section className={`team-stream-group${past ? ' team-past-group' : ''}`}>
-      <Reveal className="team-stream-heading">
-        <span className="team-stream-rule" aria-hidden="true" />
-        <div>
-          <p className="eyebrow">{past ? 'Previous PEARL contributors' : 'Current research stream'}</p>
-          <h2>{title}</h2>
-        </div>
-      </Reveal>
-      {members.map((member, i) => <TeamCard member={member} delay={i * 60} reverse={i % 2 === 1} key={member.id} />)}
-    </section>
-  )
-}
 
 export async function TeamPage() {
   const [content, members] = await Promise.all([getPageContent('team'), getTeamMembers()])
