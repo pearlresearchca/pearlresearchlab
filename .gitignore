@@ -27,3 +27,6 @@ node_modules
 .roo
 .trae
 .windsurf
+
+# Full database exports contain personal data — never commit them
+db-exports/
