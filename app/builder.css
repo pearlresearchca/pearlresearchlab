@@ -70,6 +70,15 @@
 
 .pb-tone-light { --heading-color: #fff; --foreground: #e8f1ef; --muted-foreground: #c7dfd9; --link-color: #fff; color: var(--foreground); }
 .pb-tone-light .pb-heading--eyebrow { color: #c7dfd9; }
+/* White surfaces inside a light-text section (form cards, cards) keep the
+   normal dark ink, so their labels and text stay readable. The page's
+   regular ink colours are captured at the root, before any section
+   overrides them. */
+:root { --pb-ink: var(--foreground); --pb-ink-muted: var(--muted-foreground); --pb-ink-heading: var(--heading-color, var(--foreground)); }
+.pb-tone-light .pb-form-wrap--card, .pb-tone-light .pb-card {
+  --foreground: var(--pb-ink); --muted-foreground: var(--pb-ink-muted); --heading-color: var(--pb-ink-heading); --link-color: var(--primary);
+  color: var(--foreground);
+}
 
 .pb-columns { display: grid; grid-template-columns: var(--pb-cols, 1fr 1fr); gap: 48px; align-items: start; }
 .pb-column { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
