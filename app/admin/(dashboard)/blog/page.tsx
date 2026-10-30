@@ -1,9 +1,8 @@
 import Link from 'next/link'
-import { Eye, FileText, Newspaper, PenLine, Plus, Star, TrendingUp } from 'lucide-react'
+import { Eye, FileText, Newspaper, PenLine, Star, TrendingUp } from 'lucide-react'
 import { PageHeader } from '@/components/admin/page-header'
 import { NoSectionAccess } from '@/components/admin/no-access'
-import { ActionForm } from '@/components/admin/action-form'
-import { SubmitButton } from '@/components/admin/submit-button'
+import { NewPostButton } from '@/components/admin/new-post-dialog'
 import { EmptyState } from '@/components/admin/ui'
 import { BreakdownPanel, RankingPanel, TrendPanel } from '@/components/admin/content-insights'
 import { KpiGrid } from '@/components/admin/kpi-grid'
@@ -12,7 +11,6 @@ import { canAccess } from '@/lib/cms/permissions'
 import { getAllPosts, getDailyMetrics } from '@/lib/cms/posts-jobs'
 import { dailySeries, fmt, totalsByItem } from '@/lib/cms/metrics'
 import { relativeTime } from '@/lib/cms/format'
-import { createPostAction } from './actions'
 
 export const metadata = { title: 'Blog posts' }
 
@@ -65,23 +63,11 @@ export default async function BlogAdminPage() {
       <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,.04)]">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <h2 className="text-[15px] font-semibold">All posts</h2>
-          <ActionForm action={createPostAction} successMessage="Post created" className="flex w-full max-w-md gap-2">
-            <input
-              name="title"
-              required
-              maxLength={200}
-              placeholder="Title of a new post…"
-              aria-label="New post title"
-              className="h-9 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/15"
-            />
-            <SubmitButton className="!py-1.5" pendingText="Creating…">
-              <Plus className="size-4" aria-hidden="true" /> New post
-            </SubmitButton>
-          </ActionForm>
+          <NewPostButton />
         </header>
         {posts.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="No posts yet" body="Give your first post a title above to start writing." />
+            <EmptyState title="No posts yet" body="Press New post, pick a look, and start writing." />
           </div>
         ) : (
           <ul className="divide-y divide-border" data-tour="post-list">

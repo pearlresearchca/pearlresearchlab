@@ -142,8 +142,8 @@ export const TOURS: Tour[] = [
     href: '/admin/blog',
     steps: [
       { target: '[data-tour="insights"]', title: 'How your posts perform', body: 'Published posts, views and the most-read story. Views are counted anonymously, and search-engine bots are ignored.' },
-      { target: '[aria-label="New post title"]', title: 'Start a post', body: 'Type a title and press New post. The post is created as a draft that only admins can see.' },
-      { target: '[data-tour="post-list"]', title: 'Your posts', body: 'Open any post to write it, add a cover image and category, and press Publish. Published posts appear on the Blogs page straight away.' },
+      { target: '[data-tour="new-post"]', title: 'Start a post', body: 'Press New post and pick one of 12 looks. A draft opens right away with a few starter blocks — nothing to fill in first.' },
+      { target: '[data-tour="post-list"]', title: 'Your posts', body: 'Open any post to add blocks — text, images, quotes, key numbers, videos and more — then press Publish. Published posts appear on the Blogs page straight away.' },
     ],
   },
   {
