@@ -6,7 +6,7 @@ import { isEmbedUrl } from '@/lib/builder/blocks'
 import { linkAttrs, resolveLink, type LinkValue } from '@/lib/builder/links'
 import { ICONS, SOCIAL_LABELS, SocialIcon } from './icons'
 import { AnimateOnScroll, FormBlock, GalleryBlock, TabsBlock } from './client'
-import { ResearchAreasBlock, TeamBlock, ProjectsBlock, PartnersBlock, ValuesBlock } from './site-blocks'
+import { BlogPostsBlock, JobOpeningsBlock, ResearchAreasBlock, TeamBlock, ProjectsBlock, PartnersBlock, ValuesBlock } from './site-blocks'
 import type { RenderContext } from './context'
 
 const SAFE_TOKEN = /^[A-Za-z0-9_ -]*$/
@@ -576,6 +576,20 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
       return (
         <div {...baseAttrs(node, rc, 'pb-site-block')}>
           <ValuesBlock values={rc.data.values ?? []} />
+        </div>
+      )
+
+    case 'blog-posts':
+      return (
+        <div {...baseAttrs(node, rc, 'pb-site-block')}>
+          <BlogPostsBlock posts={rc.data.blogPosts ?? []} props={p} />
+        </div>
+      )
+
+    case 'job-openings':
+      return (
+        <div {...baseAttrs(node, rc, 'pb-site-block')}>
+          <JobOpeningsBlock jobs={rc.data.jobs ?? []} props={p} emptyHref={link(rc, p.emptyLink)?.href ?? null} />
         </div>
       )
 

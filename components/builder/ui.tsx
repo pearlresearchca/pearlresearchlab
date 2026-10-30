@@ -90,6 +90,7 @@ export function Segmented<T extends string>({ value, options, onChange, label, s
         <button
           key={o.value}
           type="button"
+          data-value={o.value}
           role="radio"
           aria-checked={value === o.value}
           title={o.title}

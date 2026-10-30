@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export function Reveal({ children, className = '', delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  const ref = useRef<HTMLDivElement>(null)
+export function Reveal({ children, className = '', delay = 0, as: Tag = 'div' }: { children: React.ReactNode; className?: string; delay?: number; as?: 'div' | 'li' | 'article' | 'section' }) {
+  const ref = useRef<HTMLElement>(null)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
@@ -14,10 +14,14 @@ export function Reveal({ children, className = '', delay = 0 }: { children: Reac
         setVisible(true)
         observer.disconnect()
       }
-    }, { threshold: 0.12 })
+    }, { threshold: 0, rootMargin: '0px 0px -10% 0px' })
     observer.observe(node)
     return () => observer.disconnect()
   }, [])
 
-  return <div ref={ref} className={`${className} reveal ${visible ? 'is-visible' : ''}`} style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}>{children}</div>
+  return (
+    <Tag ref={ref as React.Ref<never>} className={`${className} reveal ${visible ? 'is-visible' : ''}`} style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}>
+      {children}
+    </Tag>
+  )
 }

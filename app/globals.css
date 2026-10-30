@@ -355,7 +355,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .contact-form select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235b6b69' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
 .contact-form textarea{resize:vertical;min-height:140px}
 .contact-form .choice-row{display:flex;flex-wrap:wrap;gap:10px}
-.contact-form .choice-pill{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px solid var(--border);border-radius:999px;background:#fbfcfc;font-size:15px;font-weight:500;cursor:pointer;transition:all .2s ease}
+.contact-form .choice-pill{position:relative;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border:1px solid var(--border);border-radius:999px;background:#fbfcfc;font-size:15px;font-weight:500;cursor:pointer;transition:background-color .2s ease,border-color .2s ease,color .2s ease,box-shadow .2s ease}
 .contact-form .choice-pill svg{width:16px;height:16px;color:var(--muted-foreground)}
 .contact-form .choice-pill input{position:absolute;opacity:0;width:1px;height:1px;margin:0;padding:0}
 .contact-form .choice-pill:hover{border-color:var(--primary)}
@@ -374,3 +374,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .form-confirmation-icon{width:52px;height:52px;color:var(--primary);margin:0 auto 16px}
 @media(max-width:900px){.contact-form-card{padding:28px 22px;border-radius:20px}.contact-details{margin-top:28px}}
 @media(max-width:640px){.contact-form .cf-grid{grid-template-columns:1fr}.contact-form-card{padding:22px 16px}.cf-submit{flex-direction:column-reverse;align-items:stretch}.contact-form .cf-submit button{justify-content:center}.contact-details li{text-align:left}}
+
+/* Team member name linking to their profile page */
+.team-name-link{display:inline-flex;align-items:baseline;gap:8px;color:inherit;background:linear-gradient(var(--accent),var(--accent)) no-repeat 0 100%/0 2px;transition:background-size .45s cubic-bezier(.22,1,.36,1),color .25s ease}
+.team-name-link svg{width:.7em;height:.7em;flex:0 0 auto;color:var(--primary);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.team-name-link:hover,.team-name-link:focus-visible{background-size:100% 2px;color:var(--primary)}
+.team-name-link:hover svg,.team-name-link:focus-visible svg{transform:translate(3px,-3px)}
+.team-name-link:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:2px}

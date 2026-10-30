@@ -1,36 +1,35 @@
 import type { MetadataRoute } from 'next'
 import { listLivePagesForSitemap } from '@/lib/builder/queries'
+import { getOpenJobs, getPublishedPosts } from '@/lib/cms/posts-jobs'
 
 const siteUrl = 'https://pearlresearchlab.vercel.app'
 
-const routes = [
-  { path: '', priority: 1 },
-  { path: '/about', priority: 0.8 },
-  { path: '/research', priority: 0.8 },
-  { path: '/projects', priority: 0.8 },
-  { path: '/team', priority: 0.6 },
-  { path: '/contact', priority: 0.6 },
-]
+// Top-level pages rank above nested ones; the homepage ranks highest.
+function priority(slug: string): number {
+  if (!slug) return 1
+  return slug.includes('/') ? 0.6 : 0.8
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const lastModified = new Date()
-  const builderPages = await listLivePagesForSitemap().catch(() => [])
-  const legacySlugs = new Set(routes.map((r) => r.path))
-
+  const [pages, posts, jobs] = await Promise.all([listLivePagesForSitemap().catch(() => []), getPublishedPosts(500), getOpenJobs()])
   return [
-    ...routes.map(({ path, priority }) => ({
-      url: `${siteUrl}${path}`,
-      lastModified: builderPages.find((p) => '/' + p.slug === path || (p.slug === '' && path === ''))?.updated_at ?? lastModified,
+    ...pages.map((p) => ({
+      url: p.slug ? `${siteUrl}/${p.slug}` : siteUrl,
+      lastModified: new Date(p.updated_at),
       changeFrequency: 'monthly' as const,
-      priority,
+      priority: priority(p.slug),
     })),
-    ...builderPages
-      .filter((p) => !legacySlugs.has(p.slug ? '/' + p.slug : ''))
-      .map((p) => ({
-        url: `${siteUrl}/${p.slug}`,
-        lastModified: new Date(p.updated_at),
-        changeFrequency: 'monthly' as const,
-        priority: 0.6,
-      })),
+    ...posts.map((p) => ({
+      url: `${siteUrl}/blogs/${p.slug}`,
+      lastModified: new Date(p.updated_at ?? p.published_at ?? p.created_at),
+      changeFrequency: 'yearly' as const,
+      priority: 0.7,
+    })),
+    ...jobs.map((j) => ({
+      url: `${siteUrl}/careers/${j.slug}`,
+      lastModified: new Date(j.updated_at ?? j.created_at),
+      changeFrequency: 'weekly' as const,
+      priority: 0.7,
+    })),
   ]
 }

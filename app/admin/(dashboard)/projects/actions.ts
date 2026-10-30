@@ -3,13 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
-import { setPageContentFields } from '@/lib/cms/mutations'
 import { check, withErrorHandling, type ActionResult } from '@/lib/cms/action-result'
 
 function revalidate(slug?: string) {
   revalidatePath('/admin/projects')
-  revalidatePath('/projects')
-  revalidatePath('/')
+  // Shown by page-builder blocks that can sit on any page.
+  revalidatePath('/', 'layout')
   if (slug) revalidatePath(`/admin/projects/${slug}`)
 }
 
@@ -19,13 +18,6 @@ function paragraphs(raw: string): string[] {
 
 function csvList(raw: string): string[] {
   return raw.split(',').map((p) => p.trim()).filter(Boolean)
-}
-
-export async function updateProjectsHeroAction(formData: FormData): Promise<ActionResult> {
-  return withErrorHandling(async () => {
-    await setPageContentFields('projects', formData, ['hero_kicker', 'hero_title', 'hero_intro'])
-    revalidate()
-  })
 }
 
 export async function createProjectAction(formData: FormData): Promise<ActionResult> {

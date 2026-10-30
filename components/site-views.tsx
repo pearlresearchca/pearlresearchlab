@@ -1,10 +1,10 @@
+import { ArrowUpRight } from 'lucide-react'
 import { ArrowLink } from './site-shell'
 import { Reveal } from './reveal'
 import { PartnerLogoRow } from './partner-logos'
 import type { Partner, Project, ProjectSection, TeamMember } from '@/lib/cms/types'
 
-// Presentational pieces of the original pages with no data fetching, shared by
-// the classic pages (components/pearl-pages.tsx) and the page builder.
+// Presentational pieces used by the page builder's data blocks (no data fetching).
 
 // Synchronous view so the page builder can render projects from preloaded data.
 export function ProjectFeatureView({
@@ -123,26 +123,18 @@ export function TeamCard({ member, delay = 0, reverse = false }: { member: TeamM
       </div>
       <div className="team-card-content">
         <p className="role-tag">{member.role}</p>
-        <h2>{member.name}</h2>
+        <h2>
+          {member.profile_url ? (
+            <a href={member.profile_url} className="team-name-link">
+              {member.name}
+              <ArrowUpRight aria-hidden="true" />
+            </a>
+          ) : (
+            member.name
+          )}
+        </h2>
         {member.bio_paragraphs.map((p) => <p key={p}>{p}</p>)}
       </div>
     </Reveal>
   )
 }
-
-export function TeamGroup({ title, members, past = false }: { title: string; members: TeamMember[]; past?: boolean }) {
-  if (members.length === 0) return null
-  return (
-    <section className={`team-stream-group${past ? ' team-past-group' : ''}`}>
-      <Reveal className="team-stream-heading">
-        <span className="team-stream-rule" aria-hidden="true" />
-        <div>
-          <p className="eyebrow">{past ? 'Previous PEARL contributors' : 'Current research stream'}</p>
-          <h2>{title}</h2>
-        </div>
-      </Reveal>
-      {members.map((member, i) => <TeamCard member={member} delay={i * 60} reverse={i % 2 === 1} key={member.id} />)}
-    </section>
-  )
-}
-

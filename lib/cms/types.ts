@@ -91,6 +91,8 @@ export type TeamMember = Editable & {
   image_url: string | null
   image_key: string | null
   bio_paragraphs: string[]
+  // Optional page the member's name links to (site path or https:// URL).
+  profile_url?: string | null
   group_key: TeamGroupKey
   active: boolean
   sort_order: number
@@ -124,3 +126,50 @@ export type AuditLogEntry = {
   new_data: Record<string, unknown> | null
   changed_at: string
 }
+
+export type BlogPost = Editable & {
+  id: string
+  title: string
+  slug: string
+  excerpt: string
+  body_html: string
+  cover_image_url: string | null
+  cover_image_key: string | null
+  author: string
+  category: string
+  status: 'draft' | 'published'
+  featured: boolean
+  published_at: string | null
+  created_at: string
+}
+
+export type JobPosting = Editable & {
+  id: string
+  title: string
+  slug: string
+  team: string
+  location: string
+  employment_type: string
+  summary: string
+  description_html: string
+  status: 'draft' | 'open' | 'closed'
+  closes_on: string | null
+  sort_order: number
+  created_at: string
+}
+
+export type JobApplication = {
+  id: string
+  job_id: string
+  name: string
+  email: string
+  phone: string
+  profile_url: string
+  message: string
+  resume_key: string | null
+  resume_name: string | null
+  is_read: boolean
+  created_at: string
+}
+
+export type DailyMetric = { kind: 'post' | 'job'; item_id: string; day: string; views: number; applications: number }

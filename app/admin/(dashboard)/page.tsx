@@ -5,13 +5,12 @@ import {
   FlaskConical,
   FolderKanban,
   Handshake,
+  Gem,
   Home as HomeIcon,
   Inbox,
-  Info,
   MessageSquare,
   PencilLine,
   LayoutTemplate,
-  Mail,
   Plus,
   Users2,
   type LucideIcon,
@@ -19,22 +18,13 @@ import {
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { canAccess, type SectionKey } from '@/lib/cms/permissions'
-import { getAllTeamMembers, getAllPartners, getProjects, getResearchAreas, getUserDirectory } from '@/lib/cms/queries'
+import { getAboutValues, getAllTeamMembers, getAllPartners, getProjects, getResearchAreas, getUserDirectory } from '@/lib/cms/queries'
 import { listPages } from '@/lib/builder/queries'
 import { EmptyState } from '@/components/admin/ui'
 import { StatusBadge } from '@/components/builder/ui'
 import { relativeTime } from '@/lib/cms/format'
 import { ActivityChart, StatusDonut, type ActivityPoint } from '@/components/admin/dashboard-charts'
 import type { AuditLogEntry } from '@/lib/cms/types'
-
-const CORE_PAGES: { key: SectionKey; label: string; href: string; icon: LucideIcon }[] = [
-  { key: 'home', label: 'Home', href: '/admin/home', icon: HomeIcon },
-  { key: 'about', label: 'About', href: '/admin/about', icon: Info },
-  { key: 'research', label: 'Research', href: '/admin/research', icon: FlaskConical },
-  { key: 'projects', label: 'Projects', href: '/admin/projects', icon: FolderKanban },
-  { key: 'team', label: 'Team', href: '/admin/team', icon: Users2 },
-  { key: 'contact', label: 'Contact', href: '/admin/contact', icon: Mail },
-]
 
 const TABLE_LABELS: Record<string, string> = {
   cms_pages: 'page',
@@ -48,6 +38,8 @@ const TABLE_LABELS: Record<string, string> = {
   projects: 'project',
   project_sections: 'project section',
   team_members: 'team member',
+  blog_posts: 'blog post',
+  job_postings: 'job posting',
 }
 
 const ACTION_VERB: Record<string, string> = { insert: 'added', update: 'updated', delete: 'removed' }
@@ -97,24 +89,23 @@ export default async function AdminDashboard() {
   const isAdmin = admin?.profile?.role === 'admin'
   const can = (s: SectionKey) => canAccess(admin?.profile, s)
 
-  const [teamMembers, projects, partners, areas, builderPages] = await Promise.all([
+  const [teamMembers, projects, partners, areas, values, builderPages] = await Promise.all([
     getAllTeamMembers(),
     getProjects(false),
     getAllPartners(),
     getResearchAreas(),
+    getAboutValues(),
     listPages().catch(() => []),
   ])
-  const homePage = builderPages.find((p) => p.legacy_key === 'home')
+  const homePage = builderPages.find((p) => p.slug === '')
   const published = builderPages.filter((p) => p.status === 'published').length
   const drafts = builderPages.filter((p) => p.status === 'draft').length
   const recentPages = [...builderPages].sort((a, b) => b.updated_at.localeCompare(a.updated_at)).slice(0, 5)
-  const counts: Partial<Record<SectionKey, string>> = {
-    research: `${areas.length} research areas`,
-    projects: `${projects.length} projects`,
-    team: `${teamMembers.length} members`,
-  }
-  const corePages = CORE_PAGES.filter((c) => can(c.key)).map((c) => ({ ...c, builder: builderPages.find((p) => p.legacy_key === c.key) }))
   const content = [
+    { label: 'Research areas', count: areas.length, href: '/admin/research', icon: FlaskConical, section: 'research' as const },
+    { label: 'Projects', count: projects.length, href: '/admin/projects', icon: FolderKanban, section: 'projects' as const },
+    { label: 'Team members', count: teamMembers.length, href: '/admin/team', icon: Users2, section: 'team' as const },
+    { label: 'PEARL values', count: values.length, href: '/admin/values', icon: Gem, section: 'about' as const },
     { label: 'Partner logos', count: partners.length, href: '/admin/partners', icon: Handshake, section: 'partners' as const },
   ].filter((c) => can(c.section))
 
@@ -222,7 +213,7 @@ export default async function AdminDashboard() {
             >
               {recentPages.length === 0 ? (
                 <div className="p-5">
-                  <EmptyState title="No pages yet" body="Create a page, or import the core pages under Pages." />
+                  <EmptyState title="No pages yet" body="Create your first page under Pages." />
                 </div>
               ) : (
                 <ul className="divide-y divide-border">
@@ -246,36 +237,6 @@ export default async function AdminDashboard() {
             </Card>
           )}
 
-          {/* Core pages */}
-          {corePages.length > 0 && (
-            <Card title="Core pages" subtitle="Edit text quickly, or open the page builder to change the layout">
-              <ul className="divide-y divide-border">
-                {corePages.map((c) => {
-                  const Icon = c.icon
-                  const state = c.builder ? (c.builder.status === 'published' ? 'Page-builder design is live' : 'Page-builder draft, not live yet') : 'Original design'
-                  return (
-                    <li key={c.key} className="flex flex-wrap items-center gap-4 px-5 py-3">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Icon className="size-4" aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-foreground">{c.label}</span>
-                        <span className="block text-xs text-muted-foreground">{state}{counts[c.key] ? ` · ${counts[c.key]}` : ''}</span>
-                      </span>
-                      <span className="flex gap-2">
-                        <Link href={c.href} className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">Edit text</Link>
-                        {canPages && (
-                          <Link href={c.builder ? `/admin/builder/${c.builder.id}` : '/admin/pages'} className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">
-                            Design
-                          </Link>
-                        )}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </Card>
-          )}
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">
@@ -289,7 +250,7 @@ export default async function AdminDashboard() {
 
           {/* Site content */}
           {content.length > 0 && (
-            <Card title="Shared content" subtitle="Used on several pages">
+            <Card title="Content" subtitle="Shown on pages by the builder’s data blocks">
               <ul className="divide-y divide-border">
                 {content.map((c) => {
                   const Icon = c.icon

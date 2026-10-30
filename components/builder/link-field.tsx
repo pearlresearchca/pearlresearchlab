@@ -21,16 +21,6 @@ const KINDS: { value: LinkKind; label: string }[] = [
   { value: 'anchor', label: 'Section on this page' },
 ]
 
-// Well-known routes that aren't builder pages (the original pages, before import).
-const BUILTIN_ROUTES = [
-  { href: '/', label: 'Home' },
-  { href: '/about', label: 'About' },
-  { href: '/research', label: 'Research' },
-  { href: '/projects', label: 'Projects' },
-  { href: '/team', label: 'Team' },
-  { href: '/contact', label: 'Contact' },
-]
-
 export function LinkField({ value, onChange, label = 'Link', allowNone = true }: { value: LinkValue | undefined; onChange: (v: LinkValue) => void; label?: string; allowNone?: boolean }) {
   const pages = usePages()
   const id = useId()
@@ -74,20 +64,12 @@ export function LinkField({ value, onChange, label = 'Link', allowNone = true }:
                 } else onChange({ ...value, pageId: undefined, href: v.slice(5) })
               }}
             >
-              <optgroup label="Site pages">
-                {BUILTIN_ROUTES.map((r) => (
-                  <option key={r.href} value={`href:${r.href}`}>{r.label} ({r.href})</option>
-                ))}
-              </optgroup>
-              {pages.length > 0 && (
-                <optgroup label="Builder pages">
-                  {pages.map((p) => (
-                    <option key={p.id} value={`id:${p.id}`}>
-                      {p.title} (/{p.slug}){p.status !== 'published' ? ` — ${p.status}` : ''}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
+              {!value?.pageId && <option value={pageValue}>Choose a page…</option>}
+              {pages.map((p) => (
+                <option key={p.id} value={`id:${p.id}`}>
+                  {p.title} (/{p.slug}){p.status !== 'published' ? ` — ${p.status}` : ''}
+                </option>
+              ))}
             </select>
           )}
           {kind === 'url' && <input id={id} className={inputClass} value={href} placeholder="https://example.com" onChange={(e) => onChange({ ...value, pageId: undefined, href: e.target.value })} aria-label="Web address" />}

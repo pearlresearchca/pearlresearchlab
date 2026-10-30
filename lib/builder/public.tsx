@@ -5,13 +5,32 @@ import { getLivePage, getSiteConfig, loadRenderData } from './queries'
 import { sanitizeByType } from './sanitize'
 import { normalizeDoc } from './tree'
 import type { PageDoc } from './types'
+import { JsonLd, ORGANIZATION, ORG_NAME, PORTFOLIO_PERSON, SITE_URL, breadcrumbs } from '@/lib/seo/json-ld'
 
-type Match = { slug: string } | { legacyKey: string }
+type Match = { slug: string }
 
-export async function BuilderPage({ doc, pageId }: { doc: PageDoc; pageId: string }) {
+type PageInfo = { title: string; slug: string; description?: string; image?: string | null }
+
+// schema.org data for a page: the organization, the page itself and its
+// breadcrumb trail; the homepage also describes the website, and the
+// portfolio page describes its person.
+function pageSchema(page: PageInfo) {
+  const url = page.slug ? `${SITE_URL}/${page.slug}` : SITE_URL
+  const graph: Record<string, unknown>[] = [
+    ORGANIZATION,
+    { '@type': page.slug === 'portfolio' ? 'ProfilePage' : page.slug === 'contact' ? 'ContactPage' : page.slug === 'about' ? 'AboutPage' : 'WebPage', '@id': `${url}#webpage`, url, name: page.title, description: page.description, isPartOf: { '@id': `${SITE_URL}/#website` }, about: { '@id': ORGANIZATION['@id'] }, ...(page.image ? { primaryImageOfPage: page.image } : {}) },
+  ]
+  if (page.slug) graph.push(breadcrumbs([{ name: 'Home', path: '' }, ...page.slug.split('/').map((_, i, parts) => ({ name: i === parts.length - 1 ? page.title : parts[i], path: '/' + parts.slice(0, i + 1).join('/') }))]))
+  else graph.push({ '@type': 'WebSite', '@id': `${SITE_URL}/#website`, url: SITE_URL, name: ORG_NAME, publisher: { '@id': ORGANIZATION['@id'] }, inLanguage: 'en-CA' })
+  if (page.slug === 'portfolio') graph.push(PORTFOLIO_PERSON)
+  return { '@context': 'https://schema.org', '@graph': graph }
+}
+
+export async function BuilderPage({ doc, pageId, page }: { doc: PageDoc; pageId: string; page?: PageInfo }) {
   const data = await loadRenderData([doc])
   return (
     <PageFrame extraFonts={data.fonts}>
+      {page && <JsonLd data={pageSchema(page)} />}
       <main>
         <PageBody doc={doc} rc={{ data, pageId, html: sanitizeByType }} />
       </main>
@@ -19,12 +38,18 @@ export async function BuilderPage({ doc, pageId }: { doc: PageDoc; pageId: strin
   )
 }
 
-// Renders the published builder version of a page, or null when there is
-// none (the caller then falls back to the original page component).
+// Renders the published builder version of a page, or null when there is none.
 export async function renderLivePage(match: Match) {
   const page = await getLivePage(match)
   if (!page?.published_content) return null
-  return <BuilderPage doc={normalizeDoc(page.published_content)} pageId={page.id} />
+  const config = await getSiteConfig()
+  return (
+    <BuilderPage
+      doc={normalizeDoc(page.published_content)}
+      pageId={page.id}
+      page={{ title: page.seo?.title || page.title, slug: page.slug, description: page.seo?.description || config.site.defaultSeoDescription, image: page.seo?.ogImage || page.featured_image }}
+    />
+  )
 }
 
 export async function livePageMetadata(match: Match, fallback: Metadata = {}): Promise<Metadata> {

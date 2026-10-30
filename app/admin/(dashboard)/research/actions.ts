@@ -2,20 +2,12 @@
 
 import { revalidatePath } from 'next/cache'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
-import { setPageContentFields } from '@/lib/cms/mutations'
 import { check, withErrorHandling, type ActionResult } from '@/lib/cms/action-result'
 
 function revalidate() {
   revalidatePath('/admin/research')
-  revalidatePath('/research')
-  revalidatePath('/')
-}
-
-export async function updateResearchHeroAction(formData: FormData): Promise<ActionResult> {
-  return withErrorHandling(async () => {
-    await setPageContentFields('research', formData, ['hero_kicker', 'hero_title', 'hero_intro'])
-    revalidate()
-  })
+  // Shown by page-builder blocks that can sit on any page.
+  revalidatePath('/', 'layout')
 }
 
 export async function updateResearchAreaAction(id: string, formData: FormData): Promise<ActionResult> {

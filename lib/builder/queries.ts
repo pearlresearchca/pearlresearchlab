@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { getOpenJobs, getPublishedPosts } from '@/lib/cms/posts-jobs'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { unwrap } from '@/lib/cms/data-error'
@@ -75,12 +76,12 @@ function isLive(page: Pick<CmsPage, 'status' | 'scheduled_at'>): boolean {
 }
 
 // Public lookup: only live pages, or private pages for signed-in editors.
-export async function getLivePage(match: { slug: string } | { legacyKey: string }) {
+export async function getLivePage(match: { slug: string }) {
   const insforge = await createInsForgeServerClient()
-  let q = insforge.database
+  const q = insforge.database
     .from('cms_pages')
     .select('id, title, slug, status, legacy_key, published_content, seo, featured_image, scheduled_at, published_at, updated_at')
-  q = 'slug' in match ? q.eq('slug', match.slug) : q.eq('legacy_key', match.legacyKey)
+    .eq('slug', match.slug)
   const data = unwrap(await q.maybeSingle(), 'getLivePage')
   const page = data as (Pick<CmsPage, 'id' | 'title' | 'slug' | 'status' | 'legacy_key' | 'published_content' | 'seo' | 'featured_image' | 'scheduled_at' | 'published_at' | 'updated_at'>) | null
   if (!page || !page.published_content) return null
@@ -207,13 +208,15 @@ export async function loadRenderData(docs: PageDoc[], opts: { everything?: boole
   const { needs, partnerContexts, fonts } = opts.everything || first.globalIds.size > 0 ? collectNeeds(sections) : first
   const all = opts.everything
 
-  const [config, pageSlugs, researchAreas, team, projects, values] = await Promise.all([
+  const [config, pageSlugs, researchAreas, team, projects, values, blogPosts, jobs] = await Promise.all([
     getSiteConfig(),
     getPageSlugs(),
     all || needs.has('researchAreas') ? getResearchAreas() : undefined,
     all || needs.has('team') ? getTeamMembers() : undefined,
     all || needs.has('projects') ? getProjects(true) : undefined,
     all || needs.has('values') ? getAboutValues() : undefined,
+    all || needs.has('blogPosts') ? getPublishedPosts(48) : undefined,
+    all || needs.has('jobs') ? getOpenJobs() : undefined,
   ])
 
   const projectData = projects
@@ -239,6 +242,8 @@ export async function loadRenderData(docs: PageDoc[], opts: { everything?: boole
     projects: projectData,
     partners,
     values,
+    blogPosts,
+    jobs,
     globalBlocks,
     fonts: [...fonts],
   }

@@ -6,9 +6,8 @@ import { check, withErrorHandling, type ActionResult } from '@/lib/cms/action-re
 
 function revalidate() {
   revalidatePath('/admin/partners')
-  revalidatePath('/')
-  revalidatePath('/about')
-  revalidatePath('/projects')
+  // Shown by page-builder blocks that can sit on any page.
+  revalidatePath('/', 'layout')
 }
 
 export async function addPartnerAction(formData: FormData): Promise<ActionResult> {

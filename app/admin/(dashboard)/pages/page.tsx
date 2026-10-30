@@ -3,7 +3,6 @@ import { PageHeader } from '@/components/admin/page-header'
 import { NoSectionAccess } from '@/components/admin/no-access'
 import { PagesManager } from '@/components/builder/pages-manager'
 import { SITE_URL, hasAny, requireAdmin } from '@/lib/builder/admin-data'
-import { LEGACY_PAGES } from '@/lib/builder/defaults'
 import { getSiteConfig, listPages, listTemplates } from '@/lib/builder/queries'
 import { getUserDirectory } from '@/lib/cms/queries'
 import type { NavItem } from '@/lib/builder/types'
@@ -20,12 +19,10 @@ function navPageIds(items: NavItem[], out = new Set<string>(), urls = new Set<st
 export default async function PagesAdminPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const { new: openNew } = await searchParams
   const admin = await requireAdmin()
-  const legacyAccess = LEGACY_PAGES.filter((p) => hasAny(admin.profile, [p.key as 'home']))
-  if (!hasAny(admin.profile, ['pages', 'seo']) && legacyAccess.length === 0) return <NoSectionAccess label="Pages" />
+  if (!hasAny(admin.profile, ['pages', 'seo', 'home', 'about', 'research', 'projects', 'team', 'contact'])) return <NoSectionAccess label="Pages" />
 
   const [pages, config, templates, users] = await Promise.all([listPages(), getSiteConfig(), listTemplates(), getUserDirectory()])
   const nav = navPageIds(config.navigation.items)
-  const imported = new Set(pages.map((p) => p.legacy_key).filter(Boolean))
 
   return (
     <div className="flex flex-col">
@@ -43,7 +40,6 @@ export default async function PagesAdminPage({ searchParams }: { searchParams: P
         canCreate={hasAny(admin.profile, ['pages'])}
         openCreate={openNew === '1'}
         canNav={hasAny(admin.profile, ['design'])}
-        legacyToImport={legacyAccess.filter((p) => !imported.has(p.key)).map((p) => ({ key: p.key, title: p.title, slug: p.slug }))}
       />
     </div>
   )

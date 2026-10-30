@@ -1,7 +1,6 @@
 import { PageHeader } from '@/components/admin/page-header'
-import { CorePageNotice } from '@/components/admin/core-page-notice'
 import { Users2 } from 'lucide-react'
-import { getAllTeamMembers, getPageContent, getUserDirectory, text } from '@/lib/cms/queries'
+import { getAllTeamMembers, getUserDirectory } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { canAccess } from '@/lib/cms/permissions'
 import { AdminCard, Field, LastEdited, TextArea, TextInput } from '@/components/admin/ui'
@@ -15,7 +14,6 @@ import {
   deleteTeamMemberAction,
   updateTeamMemberAction,
   updateTeamMemberImageAction,
-  updateTeamTextAction,
 } from './actions'
 
 const GROUPS: { key: TeamGroupKey; label: string }[] = [
@@ -45,6 +43,9 @@ function MemberCard({ member, users }: { member: TeamMember; users: UserDirector
               <TextInput id={`role-${member.id}`} name="role" defaultValue={member.role} />
             </Field>
           </div>
+          <Field label="Profile link" htmlFor={`profile-${member.id}`} hint="Optional. Makes the name on the Team page a link, e.g. /portfolio.">
+            <TextInput id={`profile-${member.id}`} name="profile_url" defaultValue={member.profile_url ?? ''} placeholder="/portfolio" />
+          </Field>
           <Field label="Bio" htmlFor={`bio-${member.id}`} hint="Separate paragraphs with a blank line.">
             <TextArea id={`bio-${member.id}`} name="bio" rows={5} defaultValue={member.bio_paragraphs.join('\n\n')} />
           </Field>
@@ -72,38 +73,13 @@ function MemberCard({ member, users }: { member: TeamMember; users: UserDirector
 
 export default async function TeamAdminPage() {
   const admin = await getCurrentAdmin()
-  if (!canAccess(admin?.profile, 'team')) return <NoSectionAccess label="the Team page" />
+  if (!canAccess(admin?.profile, 'team')) return <NoSectionAccess label="Team members" />
 
-  const [content, members, users] = await Promise.all([getPageContent('team'), getAllTeamMembers(), getUserDirectory()])
+  const [members, users] = await Promise.all([getAllTeamMembers(), getUserDirectory()])
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader group="Core pages" title="Team page" description="The Team page text and every member: photos, roles and bios." icon={<Users2 />} />
-      <CorePageNotice legacyKey="team" label="Team" />
-
-      <ActionForm action={updateTeamTextAction}>
-        <AdminCard title="Team page copy">
-          <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="Hero kicker" htmlFor="hero_kicker"><TextInput id="hero_kicker" name="hero_kicker" defaultValue={text(content, 'hero_kicker')} /></Field>
-            <div />
-            <Field label="Hero title" htmlFor="hero_title"><TextInput id="hero_title" name="hero_title" defaultValue={text(content, 'hero_title')} /></Field>
-            <Field label="Hero intro" htmlFor="hero_intro"><TextArea id="hero_intro" name="hero_intro" rows={2} defaultValue={text(content, 'hero_intro')} /></Field>
-            <Field label="Intro eyebrow" htmlFor="intro_eyebrow"><TextInput id="intro_eyebrow" name="intro_eyebrow" defaultValue={text(content, 'intro_eyebrow')} /></Field>
-            <Field label="Intro title" htmlFor="intro_title"><TextInput id="intro_title" name="intro_title" defaultValue={text(content, 'intro_title')} /></Field>
-            <Field label="Intro body" htmlFor="intro_body" className="col-span-2"><TextArea id="intro_body" name="intro_body" rows={2} defaultValue={text(content, 'intro_body')} /></Field>
-            <Field label="Leadership eyebrow" htmlFor="leadership_eyebrow"><TextInput id="leadership_eyebrow" name="leadership_eyebrow" defaultValue={text(content, 'leadership_eyebrow')} /></Field>
-            <Field label="Leadership title" htmlFor="leadership_title"><TextInput id="leadership_title" name="leadership_title" defaultValue={text(content, 'leadership_title')} /></Field>
-            <Field label="Research team eyebrow" htmlFor="research_team_eyebrow"><TextInput id="research_team_eyebrow" name="research_team_eyebrow" defaultValue={text(content, 'research_team_eyebrow')} /></Field>
-            <Field label="Research team title" htmlFor="research_team_title"><TextInput id="research_team_title" name="research_team_title" defaultValue={text(content, 'research_team_title')} /></Field>
-            <Field label="CTA eyebrow" htmlFor="cta_eyebrow"><TextInput id="cta_eyebrow" name="cta_eyebrow" defaultValue={text(content, 'cta_eyebrow')} /></Field>
-            <Field label="CTA title" htmlFor="cta_title"><TextInput id="cta_title" name="cta_title" defaultValue={text(content, 'cta_title')} /></Field>
-          </div>
-          <div className="mt-4">
-            <SubmitButton>Save</SubmitButton>
-          </div>
-        </AdminCard>
-      </ActionForm>
-
+      <PageHeader group="Content" title="Team members" description="Every member shown by the Team block: photos, roles and bios." icon={<Users2 />} />
       {GROUPS.map((group) => {
         const groupMembers = members.filter((m) => m.group_key === group.key)
         return (

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import type { RenderData } from '@/components/builder-render/context'
 import {
-  deleteReusableBlockAction, getPageStateAction, publishPageAction, reimportLegacyPageAction, saveReusableBlockAction, savePageDraftAction, saveSettingAction, saveTemplateAction,
+  deleteReusableBlockAction, getPageStateAction, publishPageAction, saveReusableBlockAction, savePageDraftAction, saveSettingAction, saveTemplateAction,
   unpublishPageAction, updateReusableBlockAction,
 } from '@/lib/builder/actions'
 import { BLOCKS, makeNode } from '@/lib/builder/blocks'
@@ -23,6 +23,7 @@ import { HistoryDialog, PageSettingsDialog, PublishDialog, type PageMeta } from 
 import { Layers, Palette, resolveInsert, type InsertTarget } from './panels'
 import { copyToClipboard, initState, readClipboard, reducer, setProp, setStyle } from './store'
 import { TemplatePicker } from './template-picker'
+import { TourRunner } from '@/components/admin/tour-runner'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from './menu'
 import { THEME_PRESETS, applyPreset } from '@/lib/builder/theme-presets'
 import { Btn, ConfirmProvider, Dialog, FieldRow, IconBtn, Segmented, Spinner, StatusBadge, Toggle, cx, inputClass, useConfirm } from './ui'
@@ -65,6 +66,10 @@ export function Builder(props: BuilderProps) {
       <PagesContext.Provider value={props.pages}>
         <Toaster position="bottom-right" richColors closeButton />
         <BuilderInner {...props} />
+        {/* Guided tours started from /admin/tours ("contents" keeps the admin tokens without a box). */}
+        <div className="admin-ui contents">
+          <TourRunner />
+        </div>
       </PagesContext.Provider>
     </ConfirmProvider>
   )
@@ -255,7 +260,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
   }
 
   async function unpublish() {
-    const ok = await confirm({ title: 'Unpublish this page?', body: page?.legacy_key ? 'Visitors will see the original version of this page again.' : 'Visitors will no longer be able to see this page.', confirmLabel: 'Unpublish', danger: true })
+    const ok = await confirm({ title: 'Unpublish this page?', body: page?.slug === '' ? 'This is the homepage — visitors will see a “page not found” message at your main address until you publish it again.' : 'Visitors will no longer be able to see this page.', confirmLabel: 'Unpublish', danger: true })
     if (!ok) return
     const res = await unpublishPageAction(page!.id)
     if ('error' in res) return toast.error(res.error)
@@ -369,7 +374,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
             <span className="truncate">{title}</span>
             {mode === 'page' ? <StatusBadge status={page!.status} /> : block!.is_global && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">Global block</span>}
           </span>
-          <span className={cx('flex items-center gap-1 text-[11px]', saveState === 'error' || saveState === 'conflict' ? 'text-red-600' : 'text-muted-foreground')} aria-live="polite">
+          <span data-tour="builder-status" className={cx('flex items-center gap-1 text-[11px]', saveState === 'error' || saveState === 'conflict' ? 'text-red-600' : 'text-muted-foreground')} aria-live="polite">
             {saveState === 'saving' ? <Spinner className="size-3" /> : <SaveIcon className="size-3" aria-hidden="true" />} {saveLabel}
             {saveState === 'error' && (
               <button type="button" className="ml-1 font-semibold underline" onClick={() => save('save', true)}>Retry</button>
@@ -378,11 +383,11 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
         </div>
 
         <div className="ml-auto flex items-center gap-1">
-          <div className="hidden items-center md:flex">
+          <div className="hidden items-center md:flex" data-tour="builder-undo">
             <IconBtn label="Undo (Ctrl+Z)" onClick={() => dispatch({ type: 'undo' })} disabled={state.past.length === 0}><Undo2 /></IconBtn>
             <IconBtn label="Redo (Ctrl+Shift+Z)" onClick={() => dispatch({ type: 'redo' })} disabled={state.future.length === 0}><Redo2 /></IconBtn>
           </div>
-          <div className="mx-1 hidden w-36 sm:block">
+          <div className="mx-1 hidden w-36 sm:block" data-tour="builder-device">
             <Segmented<Device>
               size="sm"
               label="Preview device"
@@ -436,21 +441,6 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
                 <MenuItem icon={<LayoutTemplate />} onSelect={() => setDialog('templates')}>Apply a template…</MenuItem>
                 <MenuItem icon={<Save />} onSelect={() => setDialog('template')}>Save page as template…</MenuItem>
                 <MenuItem icon={<ExternalLink />} href={'/' + page!.slug} external>Open live page</MenuItem>
-                {page!.legacy_key && (
-                  <MenuItem
-                    icon={<RefreshCw />}
-                    onSelect={async () => {
-                      if (!(await confirm({ title: 'Re-import from the original page?', body: 'Your current draft will be replaced with the latest content from the classic editor. The current draft stays in version history.', confirmLabel: 'Re-import' }))) return
-                      const r = await reimportLegacyPageAction(page!.id)
-                      if ('error' in r) return toast.error(r.error)
-                      version.current = r.version
-                      dispatch({ type: 'set-doc', doc: r.doc })
-                      toast.success('Re-imported')
-                    }}
-                  >
-                    Re-import from original page
-                  </MenuItem>
-                )}
                 {(page!.status === 'published' || page!.status === 'scheduled' || page!.status === 'private') && (
                   <>
                     <MenuSeparator />
@@ -458,14 +448,14 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
                   </>
                 )}
               </Menu>
-              <Btn size="sm" onClick={preview} className="hidden sm:inline-flex"><Eye className="size-4" /> Preview</Btn>
+              <Btn size="sm" onClick={preview} className="hidden sm:inline-flex" data-tour="builder-preview"><Eye className="size-4" /> Preview</Btn>
             </>
           )}
-          <Btn size="sm" onClick={() => save('save', true).then((ok) => ok && toast.success(mode === 'block' ? 'Block saved — pages using it are updated' : 'Draft saved'))} disabled={saveState === 'saving'}>
+          <Btn size="sm" data-tour="builder-save" onClick={() => save('save', true).then((ok) => ok && toast.success(mode === 'block' ? 'Block saved — pages using it are updated' : 'Draft saved'))} disabled={saveState === 'saving'}>
             {mode === 'block' ? 'Save block' : 'Save draft'}
           </Btn>
           {mode === 'page' && canPublish && (
-            <Btn size="sm" variant="primary" onClick={() => setDialog('publish')}>
+            <Btn size="sm" variant="primary" data-tour="builder-publish" onClick={() => setDialog('publish')}>
               Publish <ChevronDown className="size-3.5" />
             </Btn>
           )}
@@ -474,7 +464,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
 
       {/* ------------------------------------------------------------ body */}
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface md:flex" aria-label="Add blocks and page structure">
+        <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface md:flex" aria-label="Add blocks and page structure" data-tour="builder-add">
           <div className="border-b border-border p-2">
             <Segmented size="sm" label="Left panel" value={leftTab} onChange={setLeftTab} options={[{ value: 'add', label: <><Plus /> Add</> }, { value: 'layers', label: <><LayersIcon /> Layers</> }]} />
           </div>
@@ -501,7 +491,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col" aria-label="Page canvas">
+        <main className="flex min-w-0 flex-1 flex-col" aria-label="Page canvas" data-tour="builder-canvas">
           <div ref={setToolbarSlot} className="z-20 shrink-0 border-b border-border bg-surface px-3 py-2 shadow-sm empty:hidden [&>div]:mx-auto [&>div]:max-w-5xl" aria-label="Text formatting" />
           <div className="min-h-0 flex-1">
           <Canvas
@@ -525,7 +515,7 @@ function BuilderInner({ mode, page: initialPage, block, initialDoc, data: initia
           </div>
         </main>
 
-        <aside className="hidden w-80 shrink-0 border-l border-border bg-surface lg:block" aria-label="Block settings">
+        <aside className="hidden w-80 shrink-0 border-l border-border bg-surface lg:block" aria-label="Block settings" data-tour="builder-inspector">
           {selected ? (
             <Inspector
               key={selected.id}

@@ -1,40 +1,24 @@
 import { PageHeader } from '@/components/admin/page-header'
-import { CorePageNotice } from '@/components/admin/core-page-notice'
 import Link from 'next/link'
 import { ChevronRight, FolderKanban } from 'lucide-react'
-import { getPageContent, getProjects, getUserDirectory, latestEdit, text } from '@/lib/cms/queries'
+import { getProjects, getUserDirectory } from '@/lib/cms/queries'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { canAccess } from '@/lib/cms/permissions'
 import { AdminCard, Field, LastEdited, TextInput } from '@/components/admin/ui'
 import { NoSectionAccess } from '@/components/admin/no-access'
 import { SubmitButton } from '@/components/admin/submit-button'
 import { ActionForm } from '@/components/admin/action-form'
-import { createProjectAction, updateProjectsHeroAction } from './actions'
+import { createProjectAction } from './actions'
 
 export default async function ProjectsAdminPage() {
   const admin = await getCurrentAdmin()
   if (!canAccess(admin?.profile, 'projects')) return <NoSectionAccess label="Projects" />
 
-  const [content, projects, users] = await Promise.all([getPageContent('projects'), getProjects(false), getUserDirectory()])
-  const heroEdit = latestEdit(content, ['hero_kicker', 'hero_title', 'hero_intro'])
+  const [projects, users] = await Promise.all([getProjects(false), getUserDirectory()])
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader group="Core pages" title="Projects page" description="The Projects page hero and each project. Click a project to edit its full page and sections." icon={<FolderKanban />} />
-      <CorePageNotice legacyKey="projects" label="Projects" />
-
-      <ActionForm action={updateProjectsHeroAction}>
-        <AdminCard title="Projects page hero" action={<LastEdited at={heroEdit?.at} by={heroEdit?.by} users={users} />}>
-          <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-            <Field label="Kicker" htmlFor="hero_kicker"><TextInput id="hero_kicker" name="hero_kicker" defaultValue={text(content, 'hero_kicker')} /></Field>
-            <div />
-            <Field label="Title" htmlFor="hero_title"><TextInput id="hero_title" name="hero_title" defaultValue={text(content, 'hero_title')} /></Field>
-            <Field label="Intro" htmlFor="hero_intro"><TextInput id="hero_intro" name="hero_intro" defaultValue={text(content, 'hero_intro')} /></Field>
-          </div>
-          <div className="mt-4"><SubmitButton>Save</SubmitButton></div>
-        </AdminCard>
-      </ActionForm>
-
+      <PageHeader group="Content" title="Projects" description="The projects shown by the Projects block. Click a project to edit its sections." icon={<FolderKanban />} />
       <AdminCard title="All projects">
         <div className="flex flex-col gap-2">
           {projects.map((p) => (
