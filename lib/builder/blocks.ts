@@ -41,7 +41,7 @@ export type BlockDef = {
   fields: FieldDef[]
   styleGroups: StyleGroup[]
   // Site content collections this block reads (loaded server-side).
-  data?: ('researchAreas' | 'team' | 'projects' | 'partners' | 'values' | 'globalBlock')[]
+  data?: ('researchAreas' | 'team' | 'projects' | 'partners' | 'values' | 'globalBlock' | 'blogPosts' | 'jobs')[]
   create: () => Omit<BuilderNode, 'id'>
 }
 
@@ -731,6 +731,38 @@ export const BLOCK_LIST: BlockDef[] = [
     fields: [],
     styleGroups: ['spacing', 'visibility'],
     create: () => ({ type: 'values', props: {} }),
+  },
+  {
+    type: 'blog-posts',
+    label: 'Blog posts',
+    icon: 'FileText',
+    category: 'site',
+    description: 'Shows published posts from Content → Blog posts',
+    data: ['blogPosts'],
+    fields: [
+      { key: 'layout', label: 'Layout', type: 'segmented', options: [{ value: 'magazine', label: 'Featured + grid' }, { value: 'grid', label: 'Grid' }, { value: 'list', label: 'List' }] },
+      { key: 'limit', label: 'How many posts', type: 'number', min: 1, max: 48 },
+      { key: 'category', label: 'Only this category (optional)', type: 'text', placeholder: 'e.g. Food systems' },
+      { key: 'emptyText', label: 'Message when there are no posts', type: 'text' },
+    ],
+    styleGroups: ['spacing', 'visibility'],
+    create: () => ({ type: 'blog-posts', props: { layout: 'magazine', limit: 9, category: '', emptyText: 'New stories are on their way — check back soon.' } }),
+  },
+  {
+    type: 'job-openings',
+    label: 'Job openings',
+    icon: 'Briefcase',
+    category: 'site',
+    description: 'Shows open positions from Content → Job openings',
+    data: ['jobs'],
+    fields: [
+      { key: 'emptyTitle', label: 'Title when nothing is open', type: 'text' },
+      { key: 'emptyText', label: 'Message when nothing is open', type: 'textarea', rows: 2 },
+      { key: 'emptyLink', label: 'Link when nothing is open', type: 'link' },
+      { key: 'emptyLinkLabel', label: 'Link text', type: 'text' },
+    ],
+    styleGroups: ['spacing', 'visibility'],
+    create: () => ({ type: 'job-openings', props: { emptyTitle: 'No open positions right now', emptyText: 'New opportunities are posted here as they open.', emptyLink: { href: '/contact' }, emptyLinkLabel: 'Get in touch' } }),
   },
   {
     type: 'global',

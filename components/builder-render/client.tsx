@@ -28,7 +28,9 @@ export function AnimateOnScroll() {
           }
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      // Any visible part counts (a percentage threshold never fires for blocks
+      // taller than the screen); the margin waits until it's 10% into view.
+      { threshold: 0, rootMargin: '0px 0px -10% 0px' }
     )
     els.forEach((el) => io.observe(el))
     return () => io.disconnect()

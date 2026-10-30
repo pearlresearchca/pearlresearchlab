@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { AboutValue, Partner, Project, ProjectSection, ResearchArea, TeamMember } from '@/lib/cms/types'
+import type { AboutValue, BlogPost, JobPosting, Partner, Project, ProjectSection, ResearchArea, TeamMember } from '@/lib/cms/types'
 import type { BuilderNode, SiteSettings } from '@/lib/builder/types'
 
 // Everything a block might need to render, loaded up-front on the server so
@@ -13,6 +13,8 @@ export type RenderData = {
   projects?: { project: Project; sections: ProjectSection[] }[]
   partners?: Record<string, Partner[]>
   values?: AboutValue[]
+  blogPosts?: BlogPost[]
+  jobs?: JobPosting[]
   globalBlocks?: Record<string, { name: string; block: BuilderNode }>
 }
 

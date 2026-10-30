@@ -179,27 +179,3 @@ export async function submitFormAction(fd: FormData): Promise<Result> {
     return { error: GENERIC_ERROR }
   }
 }
-
-// The original (non-builder) Contact page form. Its fields are fixed in
-// components/contact-form.tsx and mirrored here for validation.
-const CONTACT_FIELDS: FieldDef[] = [
-  { id: 'name', label: 'Name', kind: 'text', required: true, options: '' },
-  { id: 'affiliation', label: 'Organization / Community / Affiliation', kind: 'text', required: false, options: '' },
-  { id: 'email', label: 'Email address', kind: 'email', required: true, options: '' },
-  { id: 'connection', label: 'Connection', kind: 'text', required: false, options: '' },
-  { id: 'topic', label: 'Topic', kind: 'text', required: true, options: '' },
-  { id: 'message', label: 'Message', kind: 'textarea', required: true, options: '' },
-  { id: 'program', label: 'Organization / community / program involved', kind: 'text', required: false, options: '' },
-  { id: 'contact_method', label: 'Preferred contact method', kind: 'text', required: true, options: '' },
-  { id: 'phone', label: 'Phone number', kind: 'tel', required: false, options: '' },
-  { id: 'contact_time', label: 'Preferred contact time', kind: 'text', required: false, options: '' },
-]
-
-export async function submitContactFormAction(fd: FormData): Promise<Result> {
-  try {
-    return await store(fd, CONTACT_FIELDS, { pageId: null, formName: 'Contact PEARL', keyPrefix: 'contact', pageLabel: 'Contact page (/contact)', thankYou: true })
-  } catch (err) {
-    console.error('submitContactFormAction failed', err)
-    return { error: GENERIC_ERROR }
-  }
-}

@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 // description and optional actions on the right.
 export function PageHeader({ title, description, icon, group, actions }: { title: string; description?: string; icon?: ReactNode; group?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-4" data-tour="page-header">
       <div className="min-w-0">
         <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-500">
           <Link href="/admin" className="hover:text-primary">Home</Link>

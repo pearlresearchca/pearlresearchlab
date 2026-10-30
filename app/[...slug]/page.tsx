@@ -3,8 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation'
 import { livePageMetadata, renderLivePage } from '@/lib/builder/public'
 import { getRedirect } from '@/lib/builder/queries'
 
-// Every page created in the page builder is served from here. The original
-// routes (/about, /team, ...) keep their own files and take precedence.
+// Every page-builder page except the homepage (app/page.tsx) is served from here.
 
 type Props = { params: Promise<{ slug: string[] }> }
 

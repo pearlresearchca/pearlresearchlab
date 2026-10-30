@@ -77,7 +77,8 @@ export function PageSettingsDialog({ open, onClose, page, onSaved, siteUrl, defa
   }, [open, page, defaultTab, seoOnly])
 
   const cleanSlug = normalizeSlug(slug)
-  const slugError = page.legacy_key ? null : validateSlug(cleanSlug)
+  const isHome = page.slug === ''
+  const slugError = isHome ? null : validateSlug(cleanSlug)
   const slugChanged = cleanSlug !== page.slug
   const s = (patch: Partial<PageSeo>) => setSeo({ ...seo, ...patch })
 
@@ -112,14 +113,14 @@ export function PageSettingsDialog({ open, onClose, page, onSaved, siteUrl, defa
             <FieldRow label="Page name" htmlFor="ps-title">
               <input id="ps-title" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
             </FieldRow>
-            <FieldRow label="Page URL" htmlFor="ps-slug" hint={page.legacy_key ? 'This is one of the original site pages, so its URL is fixed.' : `The page will be at ${siteUrl}/${cleanSlug}`}>
+            <FieldRow label="Page URL" htmlFor="ps-slug" hint={isHome ? 'This is the homepage, so it always lives at the site’s main address.' : `The page will be at ${siteUrl}/${cleanSlug}`}>
               <div className="flex items-center">
                 <span className="rounded-l-md border border-r-0 border-border bg-muted px-2.5 py-1.5 text-sm text-muted-foreground">/</span>
-                <input id="ps-slug" className={cx(inputClass, 'rounded-l-none', slugError && 'border-red-400')} value={slug} disabled={!!page.legacy_key} onChange={(e) => setSlug(e.target.value)} onBlur={() => setSlug(cleanSlug)} />
+                <input id="ps-slug" className={cx(inputClass, 'rounded-l-none', slugError && 'border-red-400')} value={slug} disabled={isHome} onChange={(e) => setSlug(e.target.value)} onBlur={() => setSlug(cleanSlug)} />
               </div>
               {slugError && <p className="text-xs text-red-600">{slugError}</p>}
             </FieldRow>
-            {slugChanged && page.published_at && !page.legacy_key && (
+            {slugChanged && page.published_at && !isHome && (
               <Toggle checked={redirect} onChange={setRedirect} label={`Redirect the old URL (/${page.slug}) to the new one so existing links keep working`} />
             )}
             <FieldRow label="Parent page" hint="Used for organising pages and nesting in navigation." htmlFor="ps-parent">

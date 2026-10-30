@@ -6,22 +6,23 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   UserRound,
   BarChart3,
+  BriefcaseBusiness,
   Blocks,
   ChevronsLeft,
   ChevronsRight,
+  Compass,
   ExternalLink,
   FileStack,
   FlaskConical,
   FolderKanban,
   Handshake,
-  Home,
+  Gem,
   Images,
   Inbox,
-  Info,
   LayoutDashboard,
   LogOut,
-  Mail,
   Menu as MenuIcon,
+  Newspaper,
   Palette,
   PanelsTopLeft,
   ScrollText,
@@ -34,6 +35,7 @@ import {
 } from 'lucide-react'
 import { canAccess, type SectionKey } from '@/lib/cms/permissions'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/builder/menu'
+import { TourRunner } from './tour-runner'
 
 type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean; sections?: SectionKey[]; adminOnly?: boolean }
 type Group = { label?: string; items: NavItem[] }
@@ -52,25 +54,23 @@ const groups: Group[] = [
     ],
   },
   {
-    // The site's main pages. Their text can be quick-edited here; their
-    // layout and design are edited in the page builder (Pages).
-    label: 'Core pages',
+    // Collections shown by data blocks in the page builder.
+    label: 'Content',
     items: [
-      { href: '/admin/home', label: 'Home', icon: Home, sections: ['home'] },
-      { href: '/admin/about', label: 'About', icon: Info, sections: ['about'] },
-      { href: '/admin/research', label: 'Research', icon: FlaskConical, sections: ['research'] },
+      { href: '/admin/blog', label: 'Blog posts', icon: Newspaper, sections: ['pages'] },
+      { href: '/admin/jobs', label: 'Job openings', icon: BriefcaseBusiness, sections: ['pages', 'contact'] },
+      { href: '/admin/research', label: 'Research areas', icon: FlaskConical, sections: ['research'] },
       { href: '/admin/projects', label: 'Projects', icon: FolderKanban, sections: ['projects'] },
-      { href: '/admin/team', label: 'Team', icon: Users2, sections: ['team'] },
-      { href: '/admin/contact', label: 'Contact', icon: Mail, sections: ['contact'] },
-    ],
-  },
-  {
-    label: 'Shared content',
-    items: [
+      { href: '/admin/team', label: 'Team members', icon: Users2, sections: ['team'] },
+      { href: '/admin/values', label: 'PEARL values', icon: Gem, sections: ['about'] },
       { href: '/admin/partners', label: 'Partner logos', icon: Handshake, sections: ['partners'] },
       { href: '/admin/blocks', label: 'Reusable blocks', icon: Blocks, sections: ['pages'] },
       { href: '/admin/submissions', label: 'Form submissions', icon: Inbox, sections: ['pages', 'contact'] },
     ],
+  },
+  {
+    label: 'Help',
+    items: [{ href: '/admin/tours', label: 'Guided tours', icon: Compass }],
   },
   {
     label: 'Settings',
@@ -104,9 +104,9 @@ export function Initials({ name, className = '' }: { name: string; className?: s
 function SidebarNav({ access, collapsed, onNavigate }: { access: Access; collapsed: boolean; onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
-    <nav className="flex flex-col gap-5" aria-label="Admin">
+    <nav className="flex flex-col gap-5" aria-label="Admin" data-tour="sidebar">
       {visibleGroups(access).map((g, gi) => (
-        <div key={gi} className="flex flex-col gap-0.5">
+        <div key={gi} className="flex flex-col gap-0.5" data-tour={g.label ? `nav-group-${g.label.toLowerCase().replace(/\W+/g, '-')}` : undefined}>
           {g.label && !collapsed && <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[.08em] text-slate-400">{g.label}</p>}
           {g.label && collapsed && <div className="mx-3 mb-1.5 h-px bg-border" aria-hidden="true" />}
           {g.items.map((item) => {
@@ -116,6 +116,7 @@ function SidebarNav({ access, collapsed, onNavigate }: { access: Access; collaps
               <Link
                 key={item.href}
                 href={item.href}
+                data-tour={`nav-${item.href.split('/').pop()}`}
                 onClick={onNavigate}
                 title={collapsed ? item.label : undefined}
                 aria-label={collapsed ? item.label : undefined}
@@ -165,7 +166,7 @@ function QuickSearch({ access }: { access: Access }) {
   }
 
   return (
-    <div className="relative w-full max-w-sm">
+    <div className="relative w-full max-w-sm" data-tour="quick-search">
       <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
       <input
         ref={input}
@@ -311,14 +312,14 @@ export function AdminShell({
           </button>
           <QuickSearch access={access} />
           <div className="ml-auto flex items-center gap-2">
-            <a href="/" target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-primary hover:text-primary sm:inline-flex">
+            <a href="/" target="_blank" rel="noopener noreferrer" data-tour="view-site" className="hidden items-center gap-1.5 rounded-xl border border-border px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-primary hover:text-primary sm:inline-flex">
               <ExternalLink className="size-4" aria-hidden="true" /> View site
             </a>
             <Menu
               label="Account"
               width={280}
               trigger={(p) => (
-                <button type="button" {...p} className="relative rounded-full ring-offset-2 transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Account menu for ${displayName}`} title={displayName}>
+                <button type="button" {...p} data-tour="account-menu" className="relative rounded-full ring-offset-2 transition hover:ring-2 hover:ring-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" aria-label={`Account menu for ${displayName}`} title={displayName}>
                   <Initials name={displayName} className="size-10 text-sm" />
                   <span className="absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-surface bg-emerald-500" aria-hidden="true" />
                 </button>
@@ -341,6 +342,7 @@ export function AdminShell({
         </header>
         <main className="mx-auto w-full max-w-[1400px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
       </div>
+      <TourRunner />
     </div>
   )
 }

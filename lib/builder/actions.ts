@@ -4,8 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createInsForgeServerClient } from '@/lib/insforge/server'
 import { getCurrentAdmin } from '@/lib/cms/auth'
 import { canAccess, type SectionKey } from '@/lib/cms/permissions'
-import { LEGACY_PAGES, normalizeSlug, validateSlug } from './defaults'
-import { LEGACY_IMPORTERS } from './legacy-import'
+import { normalizeSlug, validateSlug } from './defaults'
 import { BUILTIN_TEMPLATES } from './templates'
 import { sanitizeDoc, sanitizeNode } from './sanitize'
 import { cloneDocWithNewIds, cloneWithNewIds, normalizeDoc, uid } from './tree'
@@ -47,6 +46,8 @@ function check<T>({ error }: { data: T; error: { message?: string; code?: string
   throw new Error(error.message || 'Save failed. Please try again.')
 }
 
+// Pages that started as the site's original pages keep their legacy_key so
+// people with access to that page's section can still edit them.
 function pagePermissions(legacyKey: string | null): SectionKey[] {
   return legacyKey ? ['pages', legacyKey as SectionKey] : ['pages']
 }
@@ -222,8 +223,9 @@ export async function updatePageSettingsAction(id: string, input: PageSettingsIn
     const title = input.title.trim()
     if (!title) throw new Error('Please give the page a name.')
 
+    // The homepage always lives at "/".
     let slug = page.slug
-    if (!page.legacy_key) {
+    if (page.slug !== '') {
       slug = normalizeSlug(input.slug)
       const slugError = validateSlug(slug)
       if (slugError) throw new Error(slugError)
@@ -338,7 +340,7 @@ export async function duplicatePageAction(id: string) {
     await requireAny(['pages'])
     const page = await loadPage(id)
     const insforge = await createInsForgeServerClient()
-    const base = page.legacy_key ? page.legacy_key || 'home' : page.slug
+    const base = page.slug
     let slug = normalizeSlug(`${base || 'home'}-copy`)
     for (let i = 2; i < 50; i++) {
       const { data } = await insforge.database.from('cms_pages').select('id').eq('slug', slug).maybeSingle()
@@ -361,7 +363,7 @@ export async function deletePageAction(id: string) {
   return run(async () => {
     await requireAny(['pages'])
     const page = await loadPage(id)
-    if (page.legacy_key) throw new Error('The builder version of an original page can’t be deleted. Unpublish it to show the original page instead.')
+    if (page.slug === '') throw new Error('The homepage can’t be deleted.')
     const insforge = await createInsForgeServerClient()
     check(await insforge.database.from('cms_pages').delete().eq('id', id))
     await removeNavItemsForPage(id).catch(() => undefined)
@@ -426,49 +428,6 @@ export async function listRevisionsAction(pageId: string) {
       .limit(40)
     const revisions = (data ?? []) as { id: string; title: string; content: PageDoc; reason: string; created_at: string; created_by_email: string | null }[]
     return { revisions: revisions.map((r) => ({ ...r, content: normalizeDoc(r.content) })) }
-  })
-}
-
-// Import the original pages as builder drafts (live site unchanged until published).
-export async function importLegacyPagesAction(keys: string[]) {
-  return run(async () => {
-    const insforge = await createInsForgeServerClient()
-    const created: string[] = []
-    for (const key of keys) {
-      const legacy = LEGACY_PAGES.find((p) => p.key === key)
-      if (!legacy) continue
-      await requireAny(['pages', key as SectionKey])
-      const { data: existing } = await insforge.database.from('cms_pages').select('id').eq('legacy_key', key).maybeSingle()
-      if (existing) continue
-      const content = sanitizeDoc(await LEGACY_IMPORTERS[key]())
-      const { data, error } = await insforge.database
-        .from('cms_pages')
-        .insert([{ title: legacy.title, slug: legacy.slug, status: 'draft', template: 'imported', legacy_key: key, content, seo: {} }])
-        .select('id')
-        .single()
-      check({ data, error }, `A page already uses the URL “/${legacy.slug}”. Change that page’s URL first.`)
-      await addRevisionBestEffort((data as { id: string }).id, legacy.title, content, {}, 'import')
-      created.push((data as { id: string }).id)
-    }
-    revalidatePath('/admin/pages')
-    return { created }
-  })
-}
-
-// Rebuild a builder draft of an original page from the current content (e.g.
-// after editing it in the classic editor). Current draft is kept in history.
-export async function reimportLegacyPageAction(pageId: string) {
-  return run(async () => {
-    const page = await loadPage(pageId)
-    if (!page.legacy_key) throw new Error('Only original pages can be re-imported.')
-    await requireAny(pagePermissions(page.legacy_key))
-    await addRevision(pageId, page.title, normalizeDoc(page.content), page.seo ?? {}, 'restore')
-    const content = sanitizeDoc(await LEGACY_IMPORTERS[page.legacy_key]())
-    const insforge = await createInsForgeServerClient()
-    const { data, error } = await insforge.database.from('cms_pages').update({ content }).eq('id', pageId).select('version, updated_at')
-    check({ data, error })
-    const row = ((data ?? []) as { version: number; updated_at: string }[])[0]
-    return { doc: content, version: row.version, updatedAt: row.updated_at }
   })
 }
 

@@ -67,16 +67,6 @@ export function defaultSite(legacy: { logoUrl: string }): SiteSettings {
 // URL segments owned by real app routes; builder pages can't claim them.
 export const RESERVED_SLUGS = ['admin', 'api', '_next', 'pearl', 'opengraph-image', 'robots.txt', 'sitemap.xml', 'favicon.ico']
 
-// Slugs of the original pages; only their builder versions (legacy_key) may use them.
-export const LEGACY_PAGES: { key: string; slug: string; title: string }[] = [
-  { key: 'home', slug: '', title: 'Home' },
-  { key: 'about', slug: 'about', title: 'About' },
-  { key: 'research', slug: 'research', title: 'Research' },
-  { key: 'projects', slug: 'projects', title: 'Projects' },
-  { key: 'team', slug: 'team', title: 'Team' },
-  { key: 'contact', slug: 'contact', title: 'Contact' },
-]
-
 export function normalizeSlug(input: string): string {
   return input
     .toLowerCase()
@@ -89,13 +79,11 @@ export function normalizeSlug(input: string): string {
     .join('/')
 }
 
-export function validateSlug(slug: string, opts: { legacyKey?: string | null } = {}): string | null {
-  if (opts.legacyKey) return null
+export function validateSlug(slug: string): string | null {
   if (!slug) return 'Please enter a page URL.'
   if (!/^([a-z0-9]+(-[a-z0-9]+)*)(\/[a-z0-9]+(-[a-z0-9]+)*)*$/.test(slug)) return 'URLs can only contain lowercase letters, numbers, hyphens and slashes.'
   const first = slug.split('/')[0]
   if (RESERVED_SLUGS.includes(first)) return `“/${first}” is reserved by the website and can’t be used.`
-  if (LEGACY_PAGES.some((p) => p.slug && p.slug === slug)) return `“/${slug}” belongs to one of the original site pages. Choose a different URL.`
   if (slug.length > 120) return 'That URL is too long.'
   return null
 }

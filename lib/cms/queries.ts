@@ -148,7 +148,8 @@ export async function getProjectSections(projectId: string): Promise<ProjectSect
   return (data ?? []) as ProjectSection[]
 }
 
-const TEAM_MEMBER_COLUMNS = 'id, name, role, image_url, image_key, bio_paragraphs, group_key, active, sort_order, updated_at, updated_by'
+// All columns, so newer optional ones (profile_url) are picked up once migrated.
+const TEAM_MEMBER_COLUMNS = '*'
 
 export async function getTeamMembers(): Promise<TeamMember[]> {
   const insforge = await createInsForgeServerClient()
