@@ -532,26 +532,45 @@ body:has(.admin-ui) { background: #f4f6fb; }
 .pc-partnerships .pb-heading--h2::after { content: ""; display: block; width: 64px; height: 3px; margin: 22px auto 0; border-radius: 3px; background: linear-gradient(90deg, var(--primary), var(--accent)); }
 .pc-partnerships .pb-rich p { font-size: 1.02em; line-height: 1.75; color: var(--muted-foreground); }
 
-.pc-interests { background: linear-gradient(180deg, #fff 0%, #f3f8f7 100%); border-top: 1px solid var(--border); }
+.pc-interests { background: linear-gradient(180deg, #fff 0%, #f5f9f8 100%); border-top: 1px solid var(--border); }
 .pc-interests > .pb-inner { align-items: center; gap: 40px; }
 .pc-interests .pb-heading--h2 { text-align: center; }
 .pc-interests .pb-rich { width: 100%; }
-.pc-interests .pb-rich ul { counter-reset: pc-interest; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.pc-interests .pb-rich ul { counter-reset: pc-interest; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* Light cards in the theme's teal and gold: a soft tinted badge, a hairline
+   gradient accent, and a gentle wash — the colour deepens only on hover. */
 .pc-interests .pb-rich li {
-  --tone: #146b68; --tone-soft: #e1f1ee;
-  counter-increment: pc-interest; position: relative; display: flex; flex-direction: column; gap: 18px; min-height: 172px; padding: 26px 24px 26px; margin: 0;
-  border: 1px solid color-mix(in srgb, var(--tone) 20%, var(--border)); border-radius: 18px; overflow: hidden;
-  background: linear-gradient(160deg, var(--tone-soft) 0%, #fff 65%);
-  transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+  --tone: var(--primary, #146b68); --tone-soft: #eef6f4; --tone-ink: var(--primary, #146b68);
+  counter-increment: pc-interest; position: relative; display: flex; flex-direction: column; gap: 16px; min-height: 160px; padding: 24px 24px 26px; margin: 0;
+  border: 1px solid color-mix(in srgb, var(--tone) 14%, var(--border)); border-radius: 18px; overflow: hidden;
+  background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--tone-soft) 85%, transparent) 0%, #fff 58%);
+  transition: transform .28s cubic-bezier(.23,1,.32,1), box-shadow .28s ease, border-color .28s ease;
 }
-.pc-interests .pb-rich li::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--tone); }
+.pc-interests .pb-rich li::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 2px; background: linear-gradient(90deg, color-mix(in srgb, var(--tone) 70%, transparent), transparent 75%); opacity: .8; transition: opacity .28s ease; }
 .pc-interests .pb-rich li::before {
-  content: counter(pc-interest, decimal-leading-zero); display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px;
-  background: var(--tone); color: var(--tone-ink, #fff); font-family: var(--heading-font); font-size: 18px; line-height: 1; box-shadow: 0 8px 18px -10px var(--tone);
+  content: counter(pc-interest, decimal-leading-zero); display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px;
+  background: var(--tone-soft); color: var(--tone-ink); border: 1px solid color-mix(in srgb, var(--tone) 22%, transparent);
+  font-family: var(--heading-font, var(--font-serif)), Georgia, serif; font-size: 17px; line-height: 1;
+  transition: background-color .28s ease, color .28s ease, border-color .28s ease, transform .28s cubic-bezier(.23,1,.32,1);
 }
-.pc-interests .pb-rich li > p { margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.45; color: var(--foreground); }
-.pc-interests .pb-rich li:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--tone) 45%, var(--border)); box-shadow: 0 18px 36px -22px color-mix(in srgb, var(--tone) 70%, transparent); }
-.pc-interests .pb-rich li:nth-child(even) { --tone: #d9b84d; --tone-soft: #fbf4dd; --tone-ink: #0d4f4d; }
+.pc-interests .pb-rich li > p { margin: 0; font-size: 16.5px; font-weight: 600; line-height: 1.45; color: var(--heading-color, var(--foreground)); }
+.pc-interests .pb-rich li:nth-child(even) { --tone: var(--accent, #d9b84d); --tone-soft: #fbf6e6; --tone-ink: #8a6a12; }
+@media (hover: hover) and (pointer: fine) {
+  .pc-interests .pb-rich li:hover { transform: translateY(-4px); border-color: color-mix(in srgb, var(--tone) 38%, var(--border)); box-shadow: 0 20px 40px -28px color-mix(in srgb, var(--tone) 60%, transparent); }
+  .pc-interests .pb-rich li:hover::before { background: var(--tone); color: #fff; border-color: transparent; transform: scale(1.04); }
+  .pc-interests .pb-rich li:nth-child(even):hover::before { color: #3d2f05; }
+  .pc-interests .pb-rich li:hover::after { opacity: 1; }
+}
+/* Cards rise in as they scroll into view (scroll-driven, no JavaScript);
+   browsers without support simply show them. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .pc-interests .pb-rich li { animation: pc-interest-in linear both; animation-timeline: view(); animation-range: entry 5% entry 70%; }
+    .pc-interests .pb-rich li:nth-child(3n+2) { animation-range: entry 12% entry 77%; }
+    .pc-interests .pb-rich li:nth-child(3n) { animation-range: entry 19% entry 84%; }
+  }
+}
+@keyframes pc-interest-in { from { opacity: 0; transform: translateY(26px) scale(.98); } to { opacity: 1; transform: none; } }
 .pc-interest-note.pb-text { max-width: 860px; padding: 20px 24px 20px 58px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-left: 4px solid var(--accent); border-radius: 14px; background: #fffaeb; color: var(--foreground); font-size: 15.5px; line-height: 1.65; position: relative; }
 .pc-interest-note.pb-text::before { content: "i"; position: absolute; left: 20px; top: 20px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font: italic 700 14px/1 Georgia, serif; }
 
@@ -587,13 +606,14 @@ body:has(.admin-ui) { background: #f4f6fb; }
   .pc-connect .pb-columns { gap: 24px !important; }
 }
 @container pb (max-width: 640px) {
-  .pc-interests .pb-rich ul { grid-template-columns: 1fr; gap: 14px; }
-  .pc-interests .pb-rich li { min-height: 0; flex-direction: row; align-items: center; padding: 18px; gap: 16px; }
-  .pc-interests .pb-rich li::before { flex: none; width: 40px; height: 40px; font-size: 16px; }
+  .pc-interests .pb-rich ul { grid-template-columns: 1fr; gap: 12px; }
+  .pc-interests .pb-rich li { min-height: 0; flex-direction: row; align-items: center; padding: 16px 18px; gap: 16px; }
+  .pc-interests .pb-rich li::before { flex: none; width: 40px; height: 40px; font-size: 15px; }
+  .pc-interests .pb-rich li:nth-child(n) { animation-range: entry 5% entry 70%; }
   .pc-connect-card .pb-rich ul { grid-template-columns: 1fr; }
   .pc-connect-card.pb-column, .pc-approach-card.pb-column { padding: 28px 22px; border-radius: 18px; }
 }
-@media (prefers-reduced-motion: reduce) { .pc-interests .pb-rich li, .pc-interests .pb-rich li:hover { transition: none; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pc-interests .pb-rich li, .pc-interests .pb-rich li:hover, .pc-interests .pb-rich li::before { transition: none; transform: none; animation: none; } }
 
 /* Guided tours (components/admin/tour-runner.tsx): soft ring pulsing out of the spotlight. */
 @keyframes tour-pulse {
