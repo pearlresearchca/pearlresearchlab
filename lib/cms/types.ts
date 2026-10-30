@@ -139,6 +139,9 @@ export type BlogPost = Editable & {
   category: string
   status: 'draft' | 'published'
   featured: boolean
+  // Visual style key (lib/blog/blocks.ts POST_STYLES) and content blocks.
+  style: string
+  blocks: import('@/lib/blog/blocks').PostBlock[]
   published_at: string | null
   created_at: string
 }

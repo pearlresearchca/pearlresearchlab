@@ -2,10 +2,12 @@ import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { after } from 'next/server'
-import { ArrowLeft, ArrowUpRight, Clock } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
+import { PostArticle } from '@/components/blog/post-article'
+import { blocksText, readingMinutesFromText } from '@/lib/blog/blocks'
 import { PageFrame } from '@/components/page-frame'
 import { Reveal } from '@/components/reveal'
-import { formatDate, readingMinutes } from '@/components/builder-render/site-blocks'
+import { formatDate } from '@/components/builder-render/site-blocks'
 import { getPostBySlug, getPublishedPosts, recordView } from '@/lib/cms/posts-jobs'
 import { sanitizeByType } from '@/lib/builder/sanitize'
 import { JsonLd, ORGANIZATION, SITE_URL, breadcrumbs } from '@/lib/seo/json-ld'
@@ -41,7 +43,8 @@ export default async function BlogPostPage({ params }: Props) {
   const userAgent = (await headers()).get('user-agent') ?? ''
   after(() => recordView('post', post.id, userAgent))
   const more = (await getPublishedPosts(6)).filter((p) => p.id !== post.id).slice(0, 3)
-  const minutes = readingMinutes(post.body_html)
+  const blocks = Array.isArray(post.blocks) ? post.blocks : []
+  const minutes = readingMinutesFromText(blocksText(blocks) + ' ' + post.body_html.replace(/<[^>]+>/g, ' '))
 
   return (
     <PageFrame>
@@ -67,29 +70,8 @@ export default async function BlogPostPage({ params }: Props) {
           ],
         }}
       />
-      <main className="article">
-        <header className="article-hero">
-          <div className="article-wrap">
-            <a href="/blogs" className="article-back"><ArrowLeft aria-hidden="true" /> All stories</a>
-            <div className="article-meta">
-              {post.category && <span className="pb-post-chip">{post.category}</span>}
-              <time dateTime={post.published_at ?? undefined}>{formatDate(post.published_at)}</time>
-              <span className="article-dot" aria-hidden="true" />
-              <span className="article-read"><Clock aria-hidden="true" /> {minutes} min read</span>
-            </div>
-            <h1 className="article-title">{post.title}</h1>
-            {post.excerpt && <p className="article-lead">{post.excerpt}</p>}
-            {post.author && <p className="article-byline">By <strong>{post.author}</strong></p>}
-          </div>
-        </header>
-        {post.cover_image_url && (
-          <figure className="article-cover">
-            <img src={post.cover_image_url} alt="" />
-          </figure>
-        )}
-        <div className="article-wrap">
-          <div className="pb-rich article-body" dangerouslySetInnerHTML={{ __html: sanitizeByType('richtext', post.body_html) }} />
-        </div>
+      <main>
+        <PostArticle post={{ ...post, blocks: Array.isArray(post.blocks) ? post.blocks : [] }} legacyHtml={post.body_html ? sanitizeByType('richtext', post.body_html) : undefined} />
         {more.length > 0 && (
           <section className="article-more" aria-labelledby="more-stories">
             <div className="site-container">

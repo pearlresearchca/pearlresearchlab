@@ -3,6 +3,7 @@ import { ArrowLink } from '@/components/site-shell'
 import { Reveal } from '@/components/reveal'
 import { PartnerLogoGrid, PartnerLogoMarquee, PartnerLogoRow } from '@/components/partner-logos'
 import { ProjectFeatureView, TeamCard } from '@/components/site-views'
+import { blocksText } from '@/lib/blog/blocks'
 import type { AboutValue, BlogPost, JobPosting, Partner, Project, ProjectSection, ResearchArea, TeamMember } from '@/lib/cms/types'
 
 // Blocks that display the site's structured content collections (research
@@ -130,7 +131,7 @@ function PostCard({ post, featured = false, delay = 0 }: { post: BlogPost; featu
             {post.category && <span className="pb-post-chip">{post.category}</span>}
             <span>{formatDate(post.published_at)}</span>
             <span aria-hidden="true">·</span>
-            <span>{readingMinutes(post.body_html)} min read</span>
+            <span>{readingMinutes(post.body_html + ' ' + blocksText(Array.isArray(post.blocks) ? post.blocks : []))} min read</span>
           </span>
           <span className="pb-post-title">{post.title}</span>
           {post.excerpt && <span className="pb-post-excerpt">{post.excerpt}</span>}
