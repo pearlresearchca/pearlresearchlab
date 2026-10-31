@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, ChevronDown } from 'lucide-react'
 import { ArrowLink } from './site-shell'
 import { Reveal } from './reveal'
 import { PartnerLogoRow } from './partner-logos'
@@ -96,15 +96,32 @@ function SectionRow({
   delay: number
 }) {
   const rowClass = !image ? 'research-row research-row-solo' : reverse ? 'research-row research-row-reverse' : 'research-row'
+  // Long sections lead with their first paragraph; the rest folds away so the
+  // text stays in proportion with the image beside it.
+  const [lead, ...more] = body
 
   return (
     <div>
-      <Reveal className={rowClass} delay={delay}>
+      <Reveal className={`${rowClass} project-section-row`} delay={delay}>
         <div className="research-copy">
           <h3>{heading}</h3>
-          {body.map((p) => <p key={p}>{p}</p>)}
+          {lead && <p className="project-section-lead">{lead}</p>}
+          {more.length > 0 && (
+            <details className="project-section-more">
+              <summary>
+                <span className="project-section-more-open">Read more</span>
+                <span className="project-section-more-close">Show less</span>
+                <ChevronDown aria-hidden="true" />
+              </summary>
+              {more.map((p) => <p key={p}>{p}</p>)}
+            </details>
+          )}
         </div>
-        {image && <img src={image} alt={heading} />}
+        {image && (
+          <div className="project-section-media">
+            <img src={image} alt={heading} loading="lazy" decoding="async" />
+          </div>
+        )}
       </Reveal>
       {logos.length > 0 && (
         <Reveal delay={delay + 40}>

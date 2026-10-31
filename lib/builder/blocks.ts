@@ -666,7 +666,7 @@ export const BLOCK_LIST: BlockDef[] = [
     description: 'Shows the research areas from Content → Research areas',
     data: ['researchAreas'],
     fields: [
-      { key: 'variant', label: 'Layout', type: 'segmented', options: [{ value: 'cards', label: 'Cards' }, { value: 'rows', label: 'Rows with images' }, { value: 'index', label: 'Jump list' }] },
+      { key: 'variant', label: 'Layout', type: 'segmented', options: [{ value: 'cards', label: 'Cards' }, { value: 'rows', label: 'Rows with images' }, { value: 'scroll', label: 'Scrolling showcase' }, { value: 'index', label: 'Jump list' }] },
       { key: 'homeOnly', label: 'Only areas marked "show on home"', type: 'toggle' },
       { key: 'linkLabel', label: 'Link text', type: 'text' },
       { key: 'link', label: 'Link', type: 'link' },
