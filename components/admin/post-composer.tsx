@@ -5,10 +5,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
-  ArrowDown, ArrowLeft, ArrowUp, BarChart3, Bold, Check, ChevronDown, Copy, ExternalLink, Eye, Heading, Image as ImageIcon, Italic, Lightbulb, Link2,
+  ArrowDown, ArrowLeft, ArrowUp, BarChart3, Bold, Check, ChevronDown, Columns2, Copy, ExternalLink, Eye, LayoutTemplate, Palette, PenLine, Heading, Image as ImageIcon, Italic, Lightbulb, Link2,
   List, Loader2, Minus, MousePointerClick, MessagesSquare, PanelsLeftRight, Pilcrow, PlayCircle, Plus, Quote, Star, Trash2, Upload, X, type LucideIcon,
 } from 'lucide-react'
 import { insforge } from '@/lib/insforge/client'
+import { PostArticle } from '@/components/blog/post-article'
+import { StylePreview } from '@/components/admin/post-style-preview'
 import { BLOCK_DEF, BLOCK_DEFS, POST_STYLES, POST_STYLE, blockId, blocksText, embedUrl, readingMinutesFromText, type PostBlock, type PostBlockType } from '@/lib/blog/blocks'
 import { savePostAction, setPostStatusAction, deletePostAction, type PostDraft } from '@/app/admin/(dashboard)/blog/actions'
 
@@ -303,7 +305,10 @@ function InsertBar({ open, onOpen, onPick, onClose, last }: { open: boolean; onO
 
 export type ComposerPost = PostDraft & { id: string; status: 'draft' | 'published'; slug: string }
 
-export function PostComposer({ post: initial, views }: { post: ComposerPost; views: { d30: number; d90: number } }) {
+type View = 'write' | 'split' | 'preview'
+const VIEW_KEY = 'pearl-post-editor-view'
+
+export function PostComposer({ post: initial, views, isNew = false }: { post: ComposerPost; views: { d30: number; d90: number }; isNew?: boolean }) {
   const router = useRouter()
   const [draft, setDraft] = useState<PostDraft>(() => ({
     title: initial.title === 'Untitled post' ? '' : initial.title,
@@ -315,7 +320,20 @@ export function PostComposer({ post: initial, views }: { post: ComposerPost; vie
   const [saving, setSaving] = useState(false)
   const [insertAt, setInsertAt] = useState<number | null>(null)
   const [flash, setFlash] = useState<string | null>(null)
-  const [stylesOpen, setStylesOpen] = useState(false)
+  const [lookOpen, setLookOpen] = useState(isNew)
+  const [view, setViewState] = useState<View>('write')
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(VIEW_KEY)
+      if (v === 'write' || v === 'split' || v === 'preview') setViewState(v)
+    } catch {}
+  }, [])
+  const setView = (v: View) => {
+    setViewState(v)
+    try {
+      localStorage.setItem(VIEW_KEY, v)
+    } catch {}
+  }
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pending, start] = useTransition()
 
@@ -426,6 +444,163 @@ export function PostComposer({ post: initial, views }: { post: ComposerPost; vie
   }, [flash])
 
   const live = status === 'published'
+  // Stable 'today' for the preview's date line.
+  const [previewDate] = useState(() => new Date().toISOString())
+  const hasContent = !!blocksText(draft.blocks).trim() || draft.blocks.some((b) => (b.type === 'image' || b.type === 'imageText') && !!b.src)
+
+  // Switching the look keeps what's written; an empty post also gets the
+  // new style's starter layout.
+  function chooseStyle(key: string) {
+    if (key === draft.style) return
+    const next = POST_STYLE[key]
+    if (!next) return
+    set({ style: key, ...(hasContent ? {} : { blocks: next.starter() }) })
+  }
+  function loadStarter() {
+    const before = draft.blocks
+    set({ blocks: style.starter() })
+    toast(`${style.name} starter layout loaded`, { action: { label: 'Undo', onClick: () => set({ blocks: before }) } })
+  }
+
+  const lookPicker = (
+    <section className="mb-6 overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,.04)]" aria-label="Post look">
+      <div className="flex flex-wrap items-center gap-3 px-5 py-4 sm:px-6">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-black/5" style={{ background: style.swatch.bg }}>
+          <span className="h-1.5 w-5 rounded-full" style={{ background: style.swatch.accent }} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Look</p>
+          <p className="truncate text-sm font-semibold text-foreground">
+            {style.name} <span className="font-normal text-muted-foreground">— {style.description}</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setLookOpen((o) => !o)}
+          aria-expanded={lookOpen}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:border-primary/40 hover:text-primary"
+        >
+          <Palette className="size-3.5" /> {lookOpen ? 'Hide looks' : 'Change look'}
+          <ChevronDown className={`size-3.5 transition-transform duration-200 ${lookOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+      {lookOpen && (
+        <div className="border-t border-border bg-background/60 px-5 pb-5 pt-4 sm:px-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-2 motion-safe:duration-200">
+          <p className="mb-3 text-xs text-muted-foreground">
+            {hasContent ? 'Click a look to apply it — your writing stays as it is. Switch to Split or Preview to see it.' : 'Pick a look to start. It loads a ready-made layout you can fill in, and you can change it any time.'}
+          </p>
+          <ul className="-mx-1 flex snap-x gap-3 overflow-x-auto px-1 pb-2">
+            {POST_STYLES.map((s, i) => {
+              const active = s.key === draft.style
+              return (
+                <li
+                  key={s.key}
+                  className="w-[176px] shrink-0 snap-start motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:fill-mode-both"
+                  style={{ animationDelay: `${i * 30}ms`, animationDuration: '300ms' }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => chooseStyle(s.key)}
+                    aria-pressed={active}
+                    className={`group relative flex w-full flex-col gap-2 rounded-2xl border bg-surface p-2 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_30px_-20px_rgba(67,97,238,.6)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/20 active:scale-[.98] ${active ? 'border-primary ring-4 ring-primary/15' : 'border-border hover:border-primary/40'}`}
+                  >
+                    <StylePreview style={s} />
+                    <span className="px-1 pb-0.5">
+                      <span className="block text-[13px] font-semibold text-foreground">{s.name}</span>
+                      <span className="block truncate text-[11px] text-muted-foreground">{s.description}</span>
+                    </span>
+                    {active && (
+                      <span className="absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-primary text-white shadow motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-200">
+                        <Check className="size-3.5" />
+                      </span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+          {hasContent && (
+            <button type="button" onClick={loadStarter} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline">
+              <LayoutTemplate className="size-3.5" /> Replace my blocks with the {style.name} starter layout
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  )
+
+  // Live render of the post in its look, using the site's own theme (scoped
+  // by .pa-preview-scope) — it updates as you type.
+  const previewPane = (
+    <div className={view === 'split' ? 'min-w-0 xl:sticky xl:top-36 xl:self-start' : 'min-w-0'}>
+      <div className="overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_24px_60px_-40px_rgba(15,23,42,.45)]">
+        <div className="flex items-center gap-3 border-b border-border bg-muted/50 px-4 py-2.5">
+          <span className="flex gap-1.5" aria-hidden="true">
+            <span className="size-2.5 rounded-full bg-red-300" />
+            <span className="size-2.5 rounded-full bg-amber-300" />
+            <span className="size-2.5 rounded-full bg-emerald-300" />
+          </span>
+          <span className="min-w-0 flex-1 truncate rounded-md bg-surface px-3 py-1 text-center font-mono text-[11px] text-slate-500">/blogs/{draft.slug}</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+            <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" /> Live preview
+          </span>
+        </div>
+        <div className={`pa-preview-scope overflow-y-auto ${view === 'split' ? 'max-h-[calc(100dvh-12rem)]' : 'max-h-[calc(100dvh-14rem)]'}`}>
+          <div key={draft.style} className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-300">
+            <PostArticle backHref={null} post={{ ...draft, published_at: previewDate }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
+  const sidebar = (
+    <>
+          <section className="rounded-2xl border border-border bg-surface p-5">
+            <h2 className="mb-3 text-sm font-semibold">Cover image</h2>
+            <ImagePicker src={draft.cover_image_url ?? ''} onChange={(url, key) => set({ cover_image_url: url || null, cover_image_key: url ? key ?? null : null })} ratio="aspect-[16/10]" />
+          </section>
+
+          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
+            <h2 className="text-sm font-semibold">Details</h2>
+            <div><label className={label} htmlFor="pc-author">Author</label><input id="pc-author" className={input} value={draft.author} onChange={(e) => set({ author: e.target.value })} placeholder="e.g. Dr. Mahasti Khakpour" /></div>
+            <div><label className={label} htmlFor="pc-category">Category</label><input id="pc-category" className={input} value={draft.category} onChange={(e) => set({ category: e.target.value })} placeholder="e.g. Food systems" list="pc-categories" />
+              <datalist id="pc-categories">{['Food systems', 'Health systems', 'Health equity', 'Rural health', 'Community engagement', 'Events', 'News'].map((c) => <option key={c} value={c} />)}</datalist>
+            </div>
+            <div><label className={label} htmlFor="pc-slug">Web address</label>
+              <div className="flex items-center rounded-xl border border-border bg-background focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15"><span className="pl-3 text-sm text-slate-400">/blogs/</span><input id="pc-slug" className="min-w-0 flex-1 bg-transparent py-2.5 pr-3 text-sm outline-none" value={draft.slug} onChange={(e) => set({ slug: e.target.value })} /></div>
+            </div>
+            <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border p-3 text-sm transition hover:bg-muted/50">
+              <input type="checkbox" className="admin-check" checked={draft.featured} onChange={(e) => set({ featured: e.target.checked })} />
+              <Star className={`size-4 ${draft.featured ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} /> Feature on the Blogs page
+            </label>
+          </section>
+
+          <section className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-surface p-4 text-center">
+            {[[words, 'words'], [minutes, 'min read'], [views.d30, 'views · 30d']].map(([v, l]) => (
+              <div key={String(l)}><p className="text-xl font-semibold tabular-nums">{v}</p><p className="text-[11px] text-muted-foreground">{l}</p></div>
+            ))}
+          </section>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (!confirmDelete) return setConfirmDelete(true)
+              start(async () => {
+                const r = await deletePostAction(initial.id)
+                if ('error' in r) return void toast.error(r.error)
+                setSaved(JSON.stringify(draft))
+                toast.success('Post deleted')
+                router.push('/admin/blog')
+              })
+            }}
+            onBlur={() => setConfirmDelete(false)}
+            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${confirmDelete ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
+          >
+            <Trash2 className="size-4" /> {confirmDelete ? 'Click again to delete for good' : 'Delete post'}
+          </button>
+    </>
+  )
 
   return (
     <div className="-mx-4 -mt-6 sm:-mx-6 lg:-mx-8 lg:-mt-8">
@@ -438,7 +613,14 @@ export function PostComposer({ post: initial, views }: { post: ComposerPost; vie
         </span>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {live && <a href={`/blogs/${draft.slug}`} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-muted sm:inline-flex"><ExternalLink className="size-4" /> View live</a>}
-          <button type="button" onClick={preview} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold transition hover:bg-muted active:scale-[.97]"><Eye className="size-4" /> Preview</button>
+          <div className="inline-flex rounded-lg bg-muted p-0.5" role="radiogroup" aria-label="Editor view">
+            {([['write', 'Write', PenLine], ['split', 'Split', Columns2], ['preview', 'Preview', Eye]] as const).map(([v, l, Icon]) => (
+              <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={`items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${view === v ? 'bg-surface text-primary shadow-sm' : 'text-slate-500 hover:text-foreground'} ${v === 'split' ? 'hidden xl:inline-flex' : 'inline-flex'}`}>
+                <Icon className="size-3.5" /> {l}
+              </button>
+            ))}
+          </div>
+          <button type="button" onClick={preview} title="Open the full page in a new tab" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold transition hover:bg-muted active:scale-[.97]"><ExternalLink className="size-4" /> <span className="hidden sm:inline">Full page</span></button>
           <button type="button" onClick={() => save()} disabled={saving || !dirty} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold transition hover:bg-muted active:scale-[.97] disabled:opacity-50">Save</button>
           <button type="button" onClick={() => publish(live ? 'draft' : 'published')} disabled={pending} className={`inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition active:scale-[.97] disabled:opacity-60 ${live ? 'border border-border bg-surface text-foreground hover:bg-muted' : 'bg-primary text-white shadow-primary/30 hover:bg-primary-dark'}`}>
             {pending && <Loader2 className="size-4 animate-spin" />} {live ? 'Unpublish' : 'Publish'}
@@ -446,11 +628,18 @@ export function PostComposer({ post: initial, views }: { post: ComposerPost; vie
         </div>
       </div>
 
-      <div className="grid gap-8 px-4 py-8 sm:px-6 lg:px-8 xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className={`grid gap-8 px-4 py-8 sm:px-6 lg:px-8 ${view === 'write' ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : view === 'split' ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}`}>
+        {view === 'preview' && (
+          <div className="mx-auto flex w-full max-w-[1180px] flex-col">
+            {lookPicker}
+            {previewPane}
+          </div>
+        )}
         {/* Writing area */}
-        <div className="mx-auto w-full max-w-[860px]">
+        {view !== 'preview' && (
+        <div className="mx-auto w-full min-w-0 max-w-[860px]">
+          {lookPicker}
           <div className="rounded-3xl border border-border bg-surface px-5 py-7 shadow-[0_1px_2px_rgba(15,23,42,.04)] sm:px-10 sm:py-10">
-            <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary"><span className="size-2 rounded-full" style={{ background: style.swatch.accent }} /> {style.name} style</p>
             <AutoTextarea
               value={draft.title}
               onChange={(title) => set({ title })}
@@ -502,77 +691,12 @@ export function PostComposer({ post: initial, views }: { post: ComposerPost; vie
               </div>
             </div>
           </div>
+
+          {view === 'split' && <div className="mt-6 grid gap-5 sm:grid-cols-2">{sidebar}</div>}
         </div>
-
-        {/* Sidebar */}
-        <aside className="flex flex-col gap-5 xl:sticky xl:top-36 xl:self-start">
-          <section className="rounded-2xl border border-border bg-surface p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Look</h2>
-              <button type="button" onClick={() => setStylesOpen((o) => !o)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary">
-                Change <ChevronDown className={`size-3.5 transition-transform ${stylesOpen ? 'rotate-180' : ''}`} />
-              </button>
-            </div>
-            <p className="mt-1 text-sm text-foreground">{style.name}</p>
-            <p className="text-xs text-muted-foreground">{style.description}</p>
-            {stylesOpen && (
-              <ul className="mt-3 grid grid-cols-2 gap-2 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-1">
-                {POST_STYLES.map((s) => (
-                  <li key={s.key}>
-                    <button type="button" onClick={() => (set({ style: s.key }), setStylesOpen(false))} className={`flex w-full items-center gap-2 rounded-lg border p-2 text-left text-xs font-semibold transition hover:border-primary/50 ${s.key === draft.style ? 'border-primary bg-primary/5 text-primary' : 'border-border text-foreground'}`}>
-                      <span className="flex size-6 shrink-0 overflow-hidden rounded-md border border-black/5" style={{ background: s.swatch.bg }}><span className="m-auto h-1.5 w-3.5 rounded-full" style={{ background: s.swatch.accent }} /></span>
-                      <span className="truncate">{s.name}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <section className="rounded-2xl border border-border bg-surface p-5">
-            <h2 className="mb-3 text-sm font-semibold">Cover image</h2>
-            <ImagePicker src={draft.cover_image_url ?? ''} onChange={(url, key) => set({ cover_image_url: url || null, cover_image_key: url ? key ?? null : null })} ratio="aspect-[16/10]" />
-          </section>
-
-          <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5">
-            <h2 className="text-sm font-semibold">Details</h2>
-            <div><label className={label} htmlFor="pc-author">Author</label><input id="pc-author" className={input} value={draft.author} onChange={(e) => set({ author: e.target.value })} placeholder="e.g. Dr. Mahasti Khakpour" /></div>
-            <div><label className={label} htmlFor="pc-category">Category</label><input id="pc-category" className={input} value={draft.category} onChange={(e) => set({ category: e.target.value })} placeholder="e.g. Food systems" list="pc-categories" />
-              <datalist id="pc-categories">{['Food systems', 'Health systems', 'Health equity', 'Rural health', 'Community engagement', 'Events', 'News'].map((c) => <option key={c} value={c} />)}</datalist>
-            </div>
-            <div><label className={label} htmlFor="pc-slug">Web address</label>
-              <div className="flex items-center rounded-xl border border-border bg-background focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/15"><span className="pl-3 text-sm text-slate-400">/blogs/</span><input id="pc-slug" className="min-w-0 flex-1 bg-transparent py-2.5 pr-3 text-sm outline-none" value={draft.slug} onChange={(e) => set({ slug: e.target.value })} /></div>
-            </div>
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-border p-3 text-sm transition hover:bg-muted/50">
-              <input type="checkbox" className="admin-check" checked={draft.featured} onChange={(e) => set({ featured: e.target.checked })} />
-              <Star className={`size-4 ${draft.featured ? 'fill-amber-400 text-amber-400' : 'text-slate-400'}`} /> Feature on the Blogs page
-            </label>
-          </section>
-
-          <section className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-surface p-4 text-center">
-            {[[words, 'words'], [minutes, 'min read'], [views.d30, 'views · 30d']].map(([v, l]) => (
-              <div key={String(l)}><p className="text-xl font-semibold tabular-nums">{v}</p><p className="text-[11px] text-muted-foreground">{l}</p></div>
-            ))}
-          </section>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (!confirmDelete) return setConfirmDelete(true)
-              start(async () => {
-                const r = await deletePostAction(initial.id)
-                if ('error' in r) return void toast.error(r.error)
-                setSaved(JSON.stringify(draft))
-                toast.success('Post deleted')
-                router.push('/admin/blog')
-              })
-            }}
-            onBlur={() => setConfirmDelete(false)}
-            className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${confirmDelete ? 'bg-red-600 text-white' : 'text-red-600 hover:bg-red-50'}`}
-          >
-            <Trash2 className="size-4" /> {confirmDelete ? 'Click again to delete for good' : 'Delete post'}
-          </button>
-        </aside>
+        )}
+        {view === 'split' && previewPane}
+        {view === 'write' && <aside className="flex flex-col gap-5 xl:sticky xl:top-36 xl:self-start">{sidebar}</aside>}
       </div>
     </div>
   )

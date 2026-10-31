@@ -983,3 +983,18 @@ body:has(.admin-ui) { background: #f4f6fb; }
 }
 
 .pa-preview-bar { position: sticky; top: 0; z-index: 40; padding: 8px 16px; text-align: center; font: 600 13px/1.4 var(--font-sans), sans-serif; color: #3d2f05; background: #fbe7a7; border-bottom: 1px solid #e9cf74; }
+
+/* Live post preview inside the admin (components/admin/post-composer.tsx): the
+   site theme is scoped to .pa-preview-scope; wide and full-bleed blocks fit the pane. */
+.pa-preview-scope { container-type: inline-size; background: var(--background); color: var(--foreground); font-family: var(--body-font, var(--font-sans)), sans-serif; font-size: 17px; line-height: 1.65; text-align: left; }
+.pa-preview-scope .pa-figure--wide, .pa-preview-scope .pa-figure--full, .pa-preview-scope .pa-split { left: 0; translate: none; width: 100%; }
+.pa-preview-scope .pa--feature .pa-hero { min-height: 480px; }
+.pa-preview-scope .pa--photo .pa-hero-media img { height: 440px; }
+.pa-preview-scope .pa-figure--full img { max-height: 420px; }
+@container (max-width: 760px) {
+  .pa-preview-scope .pa--magazine .pa-hero:has(.pa-hero-media) { grid-template-columns: 1fr; gap: 24px; padding: 32px 0; }
+  .pa-preview-scope .pa--magazine .pa-hero-media { order: 0; }
+  .pa-preview-scope .pa-split { grid-template-columns: 1fr; gap: 16px; }
+  .pa-preview-scope .pa-split--right img { order: 0; }
+  .pa-preview-scope .pa-title { font-size: clamp(30px, 6cqi, 48px); }
+}
