@@ -1,4 +1,4 @@
-import { ArrowUpRight, HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
+import { ArrowDown, ArrowUpRight, HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
 import { ArrowLink } from '@/components/site-shell'
 import { Reveal } from '@/components/reveal'
 import { PartnerLogoGrid, PartnerLogoMarquee, PartnerLogoRow } from '@/components/partner-logos'
@@ -13,23 +13,63 @@ import type { AboutValue, BlogPost, JobPosting, Partner, Project, ProjectSection
 
 const AREA_ICONS: Record<string, LucideIcon> = { HeartPulse, Scale, Leaf, Network, Landmark }
 
+// In-page anchor for an area, shared by the "rows" and "index" layouts so the
+// jump list can point at the matching row.
+function areaAnchor(area: ResearchArea): string {
+  return 'area-' + area.title.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
 export function ResearchAreasBlock({ areas, props, link }: { areas: ResearchArea[]; props: Record<string, any>; link: { href: string } | null }) {
   const list = props.homeOnly ? areas.filter((a) => a.show_on_home) : areas
   const href = link?.href ?? '/research'
+  if (props.variant === 'index') {
+    return (
+      <ol className="ra-index">
+        {list.map((area, i) => (
+          <li key={area.id}>
+            <a href={`#${areaAnchor(area)}`}>
+              <span className="ra-index-num">{String(i + 1).padStart(2, '0')}</span>
+              <span className="ra-index-title">{area.title}</span>
+              <ArrowDown className="ra-index-arrow" aria-hidden="true" />
+            </a>
+          </li>
+        ))}
+      </ol>
+    )
+  }
   if (props.variant === 'rows') {
     return (
-      <div className="research-list-inner">
-        {list.map((area, i) => (
-          <Reveal className="research-row" delay={i * 60} key={area.id}>
-            <div className="research-copy">
-              <span className="stream-number">0{i + 1}</span>
-              <h2>{area.title}</h2>
-              <p>{area.summary}</p>
-              {props.linkLabel && <ArrowLink href={href}>{props.linkLabel}</ArrowLink>}
-            </div>
-            {area.image_url && <img src={area.image_url} alt={area.title} loading="lazy" />}
-          </Reveal>
-        ))}
+      <div className="ra-rows">
+        {list.map((area, i) => {
+          const Icon = (area.icon_name && AREA_ICONS[area.icon_name]) || HeartPulse
+          const focus = (area.focus_points ?? []).filter(Boolean)
+          return (
+            <Reveal as="article" className={area.image_url ? 'ra-row' : 'ra-row ra-row--solo'} delay={60} key={area.id} id={areaAnchor(area)}>
+              <div className="ra-copy">
+                <div className="ra-meta">
+                  <span className="ra-num">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="ra-icon"><Icon aria-hidden="true" /></span>
+                </div>
+                <h3>{area.title}</h3>
+                <p className="ra-summary">{area.summary}</p>
+                {focus.length > 0 && (
+                  <>
+                    <p className="ra-focus-label">What we look at</p>
+                    <ul className="ra-focus">
+                      {focus.map((f) => <li key={f}>{f}</li>)}
+                    </ul>
+                  </>
+                )}
+                {props.linkLabel && <ArrowLink href={href}>{props.linkLabel}</ArrowLink>}
+              </div>
+              {area.image_url && (
+                <div className="ra-media">
+                  <img src={area.image_url} alt="" loading="lazy" decoding="async" />
+                </div>
+              )}
+            </Reveal>
+          )
+        })}
       </div>
     )
   }

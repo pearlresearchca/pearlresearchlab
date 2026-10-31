@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export function Reveal({ children, className = '', delay = 0, as: Tag = 'div' }: { children: React.ReactNode; className?: string; delay?: number; as?: 'div' | 'li' | 'article' | 'section' }) {
+export function Reveal({ children, className = '', delay = 0, as: Tag = 'div', id }: { children: React.ReactNode; className?: string; delay?: number; as?: 'div' | 'li' | 'article' | 'section'; id?: string }) {
   const ref = useRef<HTMLElement>(null)
   const [visible, setVisible] = useState(false)
 
@@ -20,7 +20,7 @@ export function Reveal({ children, className = '', delay = 0, as: Tag = 'div' }:
   }, [])
 
   return (
-    <Tag ref={ref as React.Ref<never>} className={`${className} reveal ${visible ? 'is-visible' : ''}`} style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}>
+    <Tag ref={ref as React.Ref<never>} id={id} className={`${className} reveal ${visible ? 'is-visible' : ''}`} style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}>
       {children}
     </Tag>
   )
