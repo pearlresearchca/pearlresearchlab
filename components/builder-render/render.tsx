@@ -5,7 +5,7 @@ import { docCss, safeCssValue, safeUrl } from '@/lib/builder/styles'
 import { isEmbedUrl } from '@/lib/builder/blocks'
 import { linkAttrs, resolveLink, type LinkValue } from '@/lib/builder/links'
 import { ICONS, SOCIAL_LABELS, SocialIcon } from './icons'
-import { AnimateOnScroll, FormBlock, GalleryBlock, TabsBlock } from './client'
+import { AnimateOnScroll, FeatureCarouselBlock, FormBlock, GalleryBlock, TabsBlock } from './client'
 import { BlogPostsBlock, JobOpeningsBlock, ResearchAreasBlock, TeamBlock, ProjectsBlock, PartnersBlock, ValuesBlock } from './site-blocks'
 import type { RenderContext } from './context'
 
@@ -461,6 +461,19 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
               </figcaption>
             </figure>
           ))}
+        </div>
+      )
+    }
+
+    case 'feature-carousel': {
+      const items = (p.items ?? []) as { id: string; image: string; imageAlt: string; eyebrow: string; title: string; text: string; linkLabel: string; link?: LinkValue }[]
+      const slides = items.map((s) => {
+        const l = link(rc, s.link)
+        return { id: s.id, image: safeUrl(s.image) ?? null, imageAlt: s.imageAlt ?? '', eyebrow: s.eyebrow ?? '', title: s.title ?? '', text: s.text ?? '', linkLabel: s.linkLabel ?? '', href: l?.href ?? null, external: !!l && /^https?:\/\//.test(l.href) }
+      })
+      return (
+        <div {...baseAttrs(node, rc, 'pb-fc-wrap')}>
+          <FeatureCarouselBlock slides={slides} interval={(Number(p.interval) || 6) * 1000} label={p.label ?? ''} />
         </div>
       )
     }

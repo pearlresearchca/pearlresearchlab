@@ -4,6 +4,8 @@ import type { FooterSettings, HeaderSettings, NavigationSettings, SiteSettings }
 // navigation, so nothing changes visually until an admin edits them.
 
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/pearl-population-health-equity-advocacy-research-lab/'
+export const INSTAGRAM_URL = 'https://www.instagram.com/healthequity.lab/'
+export const LAB_EMAIL = 'mkhakpou@stfx.ca'
 
 export const DEFAULT_NAVIGATION: NavigationSettings = {
   items: [
@@ -40,7 +42,10 @@ export function defaultFooter(legacy: { blurb: string; tagline: string; copyrigh
         kind: 'contact',
         title: 'Connect',
         text: 'St. Francis Xavier University\nAntigonish, Nova Scotia',
-        links: [{ id: 'l-contact', label: 'Start a conversation', url: '/contact' }],
+        links: [
+          { id: 'l-email', label: LAB_EMAIL, url: `mailto:${LAB_EMAIL}` },
+          { id: 'l-contact', label: 'Start a conversation', url: '/contact' },
+        ],
       },
     ],
     copyright: legacy.copyright,
@@ -60,7 +65,11 @@ export function defaultSite(legacy: { logoUrl: string }): SiteSettings {
     contactEmail: '',
     phone: '',
     address: 'St. Francis Xavier University\nAntigonish, Nova Scotia',
-    social: [{ id: 'soc-linkedin', platform: 'linkedin', url: LINKEDIN_URL }],
+    social: [
+      { id: 'soc-linkedin', platform: 'linkedin', url: LINKEDIN_URL },
+      { id: 'soc-instagram', platform: 'instagram', url: INSTAGRAM_URL },
+      { id: 'soc-email', platform: 'email', url: LAB_EMAIL },
+    ],
   }
 }
 

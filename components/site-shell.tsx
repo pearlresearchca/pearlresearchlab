@@ -225,7 +225,9 @@ export function SiteFooter({ footer, nav, site }: { footer: FooterSettings; nav:
                   ))}
                 {(col.kind === 'links' || col.kind === 'contact') &&
                   (col.links ?? []).map((l) =>
-                    /^https?:\/\//.test(l.url) ? (
+                    l.url.startsWith('mailto:') ? (
+                      <a key={l.id} href={l.url} className="footer-email">{l.label}</a>
+                    ) : /^https?:\/\//.test(l.url) ? (
                       <a key={l.id} href={l.url} target="_blank" rel="noopener noreferrer">{l.label} <ArrowUpRight aria-hidden="true" /></a>
                     ) : (
                       <Link key={l.id} href={l.url || '/'}>{l.label} {col.kind === 'contact' && <ArrowUpRight aria-hidden="true" />}</Link>

@@ -381,3 +381,26 @@ a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,
 .team-name-link:hover,.team-name-link:focus-visible{background-size:100% 2px;color:var(--primary)}
 .team-name-link:hover svg,.team-name-link:focus-visible svg{transform:translate(3px,-3px)}
 .team-name-link:focus-visible{outline:3px solid var(--accent);outline-offset:4px;border-radius:2px}
+
+/* Research ambient: faint line drawings drifting in the page margins
+   (components/research-ambient.tsx). Replaces the old body dots and cross. */
+body::before,body::after{display:none}
+.ra-amb{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;display:none}
+@media(min-width:1440px){.ra-amb{display:block}}
+.ra-amb-item{position:absolute;color:var(--primary);opacity:.32}
+.ra-amb-network{top:20%;right:calc((100vw - 1180px)/4 - 52px);width:104px;animation:ra-amb-float 16s ease-in-out infinite}
+.ra-amb-pulse{top:62%;right:calc((100vw - 1180px)/4 - 70px);width:140px;opacity:.38}
+.ra-amb-pulse path{stroke-dasharray:1;stroke-dashoffset:1;animation:ra-amb-trace 6s ease-in-out infinite}
+.ra-amb-bars{top:34%;left:calc((100vw - 1180px)/4 - 36px);width:72px;animation:ra-amb-float 18s ease-in-out infinite reverse}
+.ra-amb-bar{transform-box:fill-box;transform-origin:bottom;animation:ra-amb-bar 7s ease-in-out infinite}
+.ra-amb-bar:nth-of-type(2){animation-delay:-1.8s}.ra-amb-bar:nth-of-type(3){animation-delay:-3.4s}.ra-amb-bar:nth-of-type(4){animation-delay:-5s}
+.ra-amb-leaf{top:74%;left:calc((100vw - 1180px)/4 - 28px);width:56px;animation:ra-amb-sway 14s ease-in-out infinite}
+.ra-amb-node{transform-box:fill-box;transform-origin:center;animation:ra-amb-node 5s ease-in-out infinite}
+.ra-amb-node:nth-of-type(2){animation-delay:-1s}.ra-amb-node:nth-of-type(3){animation-delay:-2s}.ra-amb-node:nth-of-type(4){animation-delay:-3s}.ra-amb-node:nth-of-type(5){animation-delay:-4s}
+.page-transition{position:relative;z-index:1}
+@keyframes ra-amb-float{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(-6px,14px,0)}}
+@keyframes ra-amb-sway{0%,100%{transform:translate3d(0,0,0) rotate(-6deg)}50%{transform:translate3d(4px,-10px,0) rotate(8deg)}}
+@keyframes ra-amb-trace{0%{stroke-dashoffset:1}45%,60%{stroke-dashoffset:0}100%{stroke-dashoffset:-1}}
+@keyframes ra-amb-bar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.6)}}
+@keyframes ra-amb-node{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.35);opacity:.55}}
+@media(prefers-reduced-motion:reduce){.ra-amb *{animation:none!important}.ra-amb-pulse path{stroke-dashoffset:0}}

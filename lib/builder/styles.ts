@@ -203,6 +203,10 @@ export function docCss(doc: PageDoc | { sections: BuilderNode[] }): string {
     const d = styleDeclarations(node.style?.desktop)
     const custom = safeDeclarations(node.advanced?.css)
     if (d.length || custom) base.push(`${sel}{${[...d, custom].filter(Boolean).join(';')}}`)
+    // Columns stretch to equal height by default; a chosen vertical alignment
+    // only takes effect once they stop stretching.
+    const align = node.style?.desktop?.alignItems
+    if (node.type === 'columns' && align && align !== 'stretch') base.push(`${sel}>.pb-column{align-self:auto}`)
     const t = styleDeclarations(node.style?.tablet)
     if (t.length) tablet.push(`${sel}{${t.join(';')}}`)
     const m = styleDeclarations(node.style?.mobile)
