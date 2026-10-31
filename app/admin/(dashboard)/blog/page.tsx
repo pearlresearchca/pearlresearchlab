@@ -37,6 +37,7 @@ export default async function BlogAdminPage() {
         title="Blog posts"
         description="Write posts, publish them, and see how they’re read. Published posts appear wherever the Blog posts block is placed (the Blogs page)."
         icon={<Newspaper />}
+        actions={<NewPostButton />}
       />
 
       <KpiGrid
@@ -48,26 +49,14 @@ export default async function BlogAdminPage() {
         ]}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <TrendPanel title="Post views" data={dailySeries(metrics, 90, (m) => [m.views])} primaryLabel="Views" empty="Views appear here once published posts are read." />
-        <BreakdownPanel title="Posts by category" subtitle="Published posts" data={[...categories].map(([label, value]) => ({ label, value }))} empty="Publish a post to see categories." />
-      </div>
-      <RankingPanel
-        title="Top posts"
-        subtitle="Views in the last 30 days"
-        data={published.map((p) => ({ label: p.title, value: totals30.get(p.id)?.views ?? 0 })).sort((a, b) => b.value - a.value)}
-        primaryLabel="Views"
-        empty="No views in the last 30 days."
-      />
-
       <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_1px_2px_rgba(15,23,42,.04)]">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
           <h2 className="text-[15px] font-semibold">All posts</h2>
-          <NewPostButton />
+          <span className="text-xs text-muted-foreground">{posts.length - published.length} drafts · {published.length} published</span>
         </header>
         {posts.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="No posts yet" body="Press New post, pick a look, and start writing." />
+            <EmptyState title="No posts yet" body="Press New post at the top — the editor opens right away." />
           </div>
         ) : (
           <ul className="divide-y divide-border" data-tour="post-list">
@@ -102,6 +91,18 @@ export default async function BlogAdminPage() {
           </ul>
         )}
       </section>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <TrendPanel title="Post views" data={dailySeries(metrics, 90, (m) => [m.views])} primaryLabel="Views" empty="Views appear here once published posts are read." />
+        <BreakdownPanel title="Posts by category" subtitle="Published posts" data={[...categories].map(([label, value]) => ({ label, value }))} empty="Publish a post to see categories." />
+      </div>
+      <RankingPanel
+        title="Top posts"
+        subtitle="Views in the last 30 days"
+        data={published.map((p) => ({ label: p.title, value: totals30.get(p.id)?.views ?? 0 })).sort((a, b) => b.value - a.value)}
+        primaryLabel="Views"
+        empty="No views in the last 30 days."
+      />
     </div>
   )
 }
