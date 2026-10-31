@@ -1,10 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpLeft, BookmarkPlus, Copy, CopyPlus, EyeOff, Eye, GripVertical, Pencil, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpLeft, BookmarkPlus, Columns2, Copy, CopyPlus, EyeOff, Eye, GripVertical, Pencil, Trash2 } from 'lucide-react'
 import { PageBody } from '@/components/builder-render/render'
 import type { EditorBridge, RenderData } from '@/components/builder-render/context'
-import { BLOCKS } from '@/lib/builder/blocks'
+import { BLOCKS, canContain } from '@/lib/builder/blocks'
 import { findNode, findParent, ROOT_ID } from '@/lib/builder/tree'
 import { DEVICE_WIDTHS } from '@/lib/builder/styles'
 import { googleFontsHref, themeCss } from '@/lib/builder/theme'
@@ -12,7 +12,7 @@ import { sanitizeHtmlClient } from '@/lib/builder/sanitize-client'
 import type { BuilderNode, ThemeSettings } from '@/lib/builder/types'
 import { RichTextEditor } from './rich-text-editor'
 import { MediaPickerDialog } from './media'
-import { computeDrop, endDrag, getDrag, startDrag, type DropTarget } from './dnd'
+import { computeDrop, endDrag, getDrag, NO_BESIDE, startDrag, type DropTarget } from './dnd'
 import { setProp, setStyle, type Action, type BuilderState } from './store'
 import { cx } from './ui'
 
@@ -75,15 +75,57 @@ function InlineText({ node, field, tag, className, extra, onCommit, onExit }: { 
   )
 }
 
-// Drag handles for resizing images, videos, embeds and spacers directly on
-// the canvas. Width is stored as a percentage of the parent (so it stays
-// responsive); height in px. Written to the device currently being edited.
-function ResizeHandles({ node, box, zoom, device, dispatch }: { node: BuilderNode; box: Box; zoom: number; device: BuilderState['device']; dispatch: Dispatch<Action> }) {
+// Drag handles for resizing blocks directly on the canvas. Width is stored as
+// a percentage of the parent (so it stays responsive); height in px. Written
+// to the device currently being edited. Double-click a handle to reset.
+const MEDIA_TYPES = new Set(['image', 'video', 'embed'])
+const NO_WIDTH = new Set(['section', 'column', 'global', 'spacer'])
+
+function canResize(node: BuilderNode) {
+  return !NO_WIDTH.has(node.type) || node.type === 'spacer'
+}
+
+// Shared pointer-drag plumbing for the handles below.
+function trackPointer(e: React.PointerEvent, onMove: (ev: PointerEvent) => void, onEnd: () => void) {
+  const target = e.currentTarget as HTMLElement
+  target.setPointerCapture(e.pointerId)
+  let raf = 0
+  const move = (ev: PointerEvent) => {
+    cancelAnimationFrame(raf)
+    raf = requestAnimationFrame(() => onMove(ev))
+  }
+  const up = () => {
+    cancelAnimationFrame(raf)
+    target.removeEventListener('pointermove', move)
+    target.removeEventListener('pointerup', up)
+    target.removeEventListener('pointercancel', up)
+    onEnd()
+  }
+  target.addEventListener('pointermove', move)
+  target.addEventListener('pointerup', up)
+  target.addEventListener('pointercancel', up)
+}
+
+const sizeLabel = 'pointer-events-none absolute -bottom-9 right-0 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white shadow-lg'
+
+function ResizeHandles({ node, zoom, device, dispatch }: { node: BuilderNode; zoom: number; device: BuilderState['device']; dispatch: Dispatch<Action> }) {
   const [label, setLabel] = useState<string | null>(null)
-  const canWidth = node.type === 'image' || node.type === 'video' || node.type === 'embed'
+  const canWidth = !NO_WIDTH.has(node.type)
   const canHeight = node.type === 'image' || node.type === 'spacer' || node.type === 'embed'
+  // Text blocks may have a readable-line max-width from the theme; lift it
+  // so dragging wider actually works.
+  const maxWidth = MEDIA_TYPES.has(node.type) ? undefined : 'none'
+
+  function reset(mode: 'w' | 'h' | 'wh') {
+    if (mode !== 'h') dispatch(setStyle(node.id, device, { width: undefined, maxWidth: undefined }, `${node.id}:resize-reset`))
+    if (mode !== 'w') {
+      if (node.type === 'image' || node.type === 'embed') dispatch(setProp(node.id, 'height', ''))
+      else dispatch(setStyle(node.id, device, { height: undefined }))
+    }
+  }
 
   function start(e: React.PointerEvent, mode: 'w' | 'h' | 'wh') {
+    if (e.button !== 0) return
     e.preventDefault()
     e.stopPropagation()
     const el = document.querySelector<HTMLElement>(`.pb-editing [data-node-id="${node.id}"]`)
@@ -94,16 +136,13 @@ function ResizeHandles({ node, box, zoom, device, dispatch }: { node: BuilderNod
     const startH = (frame ?? el).getBoundingClientRect().height
     const x0 = e.clientX
     const y0 = e.clientY
-    const target = e.currentTarget as HTMLElement
-    target.setPointerCapture(e.pointerId)
-    let raf = 0
-    const move = (ev: PointerEvent) => {
-      cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(() => {
+    trackPointer(
+      e,
+      (ev) => {
         const parts: string[] = []
         if (mode !== 'h' && canWidth) {
           const pct = Math.max(10, Math.min(100, Math.round(((rect.width + (ev.clientX - x0)) / parentW) * 100)))
-          dispatch(setStyle(node.id, device, { width: `${pct}%`, maxWidth: undefined }, `${node.id}:resize`))
+          dispatch(setStyle(node.id, device, { width: `${pct}%`, maxWidth }, `${node.id}:resize`))
           parts.push(`${pct}% wide`)
         }
         if (mode !== 'w' && canHeight) {
@@ -113,28 +152,65 @@ function ResizeHandles({ node, box, zoom, device, dispatch }: { node: BuilderNod
           parts.push(`${px}px tall`)
         }
         setLabel(parts.join(' · '))
-      })
-    }
-    const up = () => {
-      cancelAnimationFrame(raf)
-      target.removeEventListener('pointermove', move)
-      target.removeEventListener('pointerup', up)
-      target.removeEventListener('pointercancel', up)
-      setLabel(null)
-    }
-    target.addEventListener('pointermove', move)
-    target.addEventListener('pointerup', up)
-    target.addEventListener('pointercancel', up)
+      },
+      () => setLabel(null)
+    )
   }
 
-  const handle = 'pointer-events-auto absolute z-10 rounded-full border-2 border-white bg-primary shadow-md touch-none'
+  const handle = 'pointer-events-auto absolute z-10 rounded-full border-2 border-white bg-primary shadow-md touch-none transition-transform hover:scale-125'
+  const tip = ' (double-click to reset)'
   return (
     <>
-      {canWidth && <span role="slider" aria-label="Drag to change width" aria-valuetext={label ?? undefined} tabIndex={-1} onPointerDown={(e) => start(e, 'w')} className={cx(handle, 'right-[-7px] top-1/2 h-8 w-3 -translate-y-1/2 cursor-ew-resize')} />}
-      {canHeight && <span role="slider" aria-label="Drag to change height" tabIndex={-1} onPointerDown={(e) => start(e, 'h')} className={cx(handle, 'bottom-[-7px] left-1/2 h-3 w-8 -translate-x-1/2 cursor-ns-resize')} />}
-      {canWidth && canHeight && <span role="slider" aria-label="Drag to resize" tabIndex={-1} onPointerDown={(e) => start(e, 'wh')} className={cx(handle, 'bottom-[-7px] right-[-7px] size-3.5 cursor-nwse-resize')} />}
-      {label && <span className="pointer-events-none absolute -bottom-9 right-0 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white shadow-lg">{label}</span>}
-      {box.w < 0 && null}
+      {canWidth && <span role="slider" aria-label="Drag to change width" aria-valuetext={label ?? undefined} title={`Drag to make wider or narrower${tip}`} tabIndex={-1} onPointerDown={(e) => start(e, 'w')} onDoubleClick={() => reset('w')} className={cx(handle, 'right-[-7px] top-1/2 h-8 w-3 -translate-y-1/2 cursor-ew-resize')} />}
+      {canHeight && <span role="slider" aria-label="Drag to change height" title={`Drag to make taller or shorter${tip}`} tabIndex={-1} onPointerDown={(e) => start(e, 'h')} onDoubleClick={() => reset('h')} className={cx(handle, 'bottom-[-7px] left-1/2 h-3 w-8 -translate-x-1/2 cursor-ns-resize')} />}
+      {canWidth && canHeight && <span role="slider" aria-label="Drag to resize" title={`Drag to resize${tip}`} tabIndex={-1} onPointerDown={(e) => start(e, 'wh')} onDoubleClick={() => reset('wh')} className={cx(handle, 'bottom-[-7px] right-[-7px] size-3.5 cursor-nwse-resize')} />}
+      {label && <span className={sizeLabel}>{label}</span>}
+    </>
+  )
+}
+
+// A bar on the right edge of a column (when columns sit side by side) that
+// shares width with the next column. Saved as custom column widths.
+function ColumnDivider({ columns, index, dispatch }: { columns: BuilderNode; index: number; dispatch: Dispatch<Action> }) {
+  const [label, setLabel] = useState<string | null>(null)
+
+  function start(e: React.PointerEvent) {
+    if (e.button !== 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    const cols = (columns.children ?? []).map((c) => document.querySelector<HTMLElement>(`.pb-editing [data-node-id="${c.id}"]`))
+    if (cols.some((c) => !c)) return
+    const widths = cols.map((c) => c!.getBoundingClientRect().width)
+    const total = widths.reduce((a, b) => a + b, 0)
+    const pair = widths[index] + widths[index + 1]
+    const min = total * 0.1
+    const x0 = e.clientX
+    trackPointer(
+      e,
+      (ev) => {
+        const left = Math.max(min, Math.min(pair - min, widths[index] + (ev.clientX - x0)))
+        const pct = widths.map((w, i) => (i === index ? left : i === index + 1 ? pair - left : w)).map((w) => Math.round((w / total) * 1000) / 10)
+        dispatch({ type: 'update-node', id: columns.id, key: `${columns.id}:widths`, fn: (n) => ({ ...n, props: { ...n.props, ratio: 'custom', widths: pct } }) })
+        setLabel(`${Math.round(pct[index])}% | ${Math.round(pct[index + 1])}%`)
+      },
+      () => setLabel(null)
+    )
+  }
+
+  return (
+    <>
+      <span
+        role="slider"
+        aria-label="Drag to share width between this column and the next"
+        title="Drag to make this column wider or narrower (double-click for equal widths)"
+        tabIndex={-1}
+        onPointerDown={start}
+        onDoubleClick={() => dispatch({ type: 'update-node', id: columns.id, fn: (n) => ({ ...n, props: { ...n.props, ratio: 'equal', widths: undefined } }) })}
+        className="pointer-events-auto absolute right-[-9px] top-1/2 z-10 flex h-14 w-4 -translate-y-1/2 cursor-col-resize touch-none items-center justify-center rounded-full border-2 border-white bg-primary shadow-md transition-transform hover:scale-110"
+      >
+        <span className="h-6 w-0.5 rounded bg-white/80" aria-hidden="true" />
+      </span>
+      {label && <span className={sizeLabel}>{label}</span>}
     </>
   )
 }
@@ -254,6 +330,20 @@ export function Canvas({
   const selectedDef = selected ? BLOCKS[selected.type] : null
   const loc = selectedId ? findParent(doc, selectedId) : null
   const siblings = loc ? (loc.parentId === ROOT_ID ? doc.sections : findNode(doc, loc.parentId)?.children ?? []) : []
+  // Columns sit next to each other (unless stacked on this device), so their
+  // move buttons go left/right and they get a width divider. Read after
+  // layout: `boxes` re-renders once the DOM is measured.
+  const sideways =
+    selected?.type === 'column' && !!loc && !!boxes.selected && (() => {
+      const el = pageRef.current?.querySelector(`[data-node-id="${loc.parentId}"]`)
+      return !!el && getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length > 1
+    })()
+  const above = loc && loc.index > 0 ? siblings[loc.index - 1] : null
+  const parentNode = loc && loc.parentId !== ROOT_ID ? findNode(doc, loc.parentId) : null
+  const besideAbove =
+    selected && above && !NO_BESIDE.has(selected.type) && !NO_BESIDE.has(above.type) && above.type !== 'columns' && parentNode && !['columns', 'grid'].includes(parentNode.type) && !(parentNode.type === 'group' && parentNode.props.direction === 'row') && canContain('column', selected.type)
+      ? above
+      : null
 
   const width = DEVICE_WIDTHS[device]
   // On desktop, lay the page out at a real desktop width and zoom it to fit
@@ -299,6 +389,11 @@ export function Canvas({
     setDragging(false)
     endDrag()
     if (!payload || !target) return
+    if (target.beside) {
+      if (payload.kind === 'node') dispatch({ type: 'place-beside', ...target.beside, id: payload.id })
+      else dispatch({ type: 'place-beside', ...target.beside, node: payload.create() })
+      return
+    }
     if (payload.kind === 'node') dispatch({ type: 'move', id: payload.id, parentId: target.parentId, index: target.index })
     else dispatch({ type: 'insert', parentId: target.parentId, index: target.index, node: payload.create() })
   }
@@ -372,9 +467,8 @@ export function Canvas({
         )}
         {boxes.selected && selected && (
           <div className="absolute border-2 border-primary" style={{ left: boxes.selected.x, top: boxes.selected.y, width: boxes.selected.w, height: boxes.selected.h }}>
-            {editingId !== selected.id && !dragging && ['image', 'video', 'embed', 'spacer'].includes(selected.type) && (
-              <ResizeHandles node={selected} box={boxes.selected} zoom={zoom} device={device} dispatch={dispatch} />
-            )}
+            {editingId !== selected.id && !dragging && canResize(selected) && <ResizeHandles node={selected} zoom={zoom} device={device} dispatch={dispatch} />}
+            {!dragging && sideways && parentNode?.type === 'columns' && loc && loc.index < siblings.length - 1 && <ColumnDivider columns={parentNode} index={loc.index} dispatch={dispatch} />}
             {editingId !== selected.id && (
               <div
                 className={cx('pointer-events-auto absolute flex items-center gap-0.5 rounded-md bg-primary px-1 py-0.5 text-white shadow-lg', boxes.selected.y < 36 ? 'top-1 left-1' : '-top-8 left-[-2px]')}
@@ -393,7 +487,7 @@ export function Canvas({
                     setDrop(null)
                   }}
                   className="flex cursor-grab items-center gap-1 rounded px-1 py-0.5 text-[11px] font-semibold hover:bg-white/15 active:cursor-grabbing"
-                  title="Drag to move"
+                  title="Drag to move. Drop on the left or right edge of another block to put them side by side."
                 >
                   <GripVertical className="size-3.5" aria-hidden="true" />
                   {selected.type === 'section' && selected.props.label ? selected.props.label : selectedDef?.label ?? selected.type}
@@ -401,8 +495,9 @@ export function Canvas({
                 {[
                   loc && loc.parentId !== ROOT_ID && { label: 'Select parent', icon: ArrowUpLeft, run: () => dispatch({ type: 'select', id: loc.parentId }) },
                   (selectedDef?.inlineText || selected.type === 'richtext') && { label: 'Edit text', icon: Pencil, run: () => dispatch({ type: 'edit', id: selected.id }) },
-                  loc && loc.index > 0 && { label: 'Move up', icon: ArrowUp, run: () => dispatch({ type: 'move', id: selected.id, parentId: loc.parentId, index: loc.index - 1 }) },
-                  loc && loc.index < siblings.length - 1 && { label: 'Move down', icon: ArrowDown, run: () => dispatch({ type: 'move', id: selected.id, parentId: loc.parentId, index: loc.index + 2 }) },
+                  loc && loc.index > 0 && { label: sideways ? 'Move left' : 'Move up', icon: sideways ? ArrowLeft : ArrowUp, run: () => dispatch({ type: 'move', id: selected.id, parentId: loc.parentId, index: loc.index - 1 }) },
+                  loc && loc.index < siblings.length - 1 && { label: sideways ? 'Move right' : 'Move down', icon: sideways ? ArrowRight : ArrowDown, run: () => dispatch({ type: 'move', id: selected.id, parentId: loc.parentId, index: loc.index + 2 }) },
+                  besideAbove && { label: 'Put next to the block above (side by side)', icon: Columns2, run: () => dispatch({ type: 'place-beside', id: selected.id, targetId: besideAbove.id, side: 'right' }) },
                   { label: 'Duplicate', icon: CopyPlus, run: () => dispatch({ type: 'duplicate', id: selected.id }) },
                   { label: 'Copy', icon: Copy, run: () => onCopy(selected) },
                   selected.type !== 'column' && selected.type !== 'global' && { label: 'Save as reusable block', icon: BookmarkPlus, run: () => onSaveReusable(selected) },
@@ -423,7 +518,14 @@ export function Canvas({
             )}
           </div>
         )}
-        {drop && (
+        {drop?.mode === 'side' && (
+          <div className="absolute rounded-full bg-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,.3)]" style={{ left: drop.rect.x, top: drop.rect.y, width: drop.rect.w, height: drop.rect.h }}>
+            <span className={cx('absolute top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white shadow-lg', drop.beside?.side === 'left' ? 'left-3' : 'right-3')}>
+              {drop.beside?.side === 'left' ? 'Drop to place on the left' : 'Drop to place on the right'}
+            </span>
+          </div>
+        )}
+        {drop && drop.mode !== 'side' && (
           <div
             className={cx('absolute rounded-sm', drop.mode === 'box' ? 'border-2 border-dashed border-blue-500 bg-blue-500/10' : 'bg-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,.25)]')}
             style={{ left: drop.rect.x, top: drop.rect.y, width: Math.max(drop.rect.w, 3), height: Math.max(drop.rect.h, 3) }}

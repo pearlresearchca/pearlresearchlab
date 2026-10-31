@@ -208,3 +208,71 @@ export function normalizeDoc(value: unknown): PageDoc {
   }
   return { version: 1, sections: [] }
 }
+
+// ---------------------------------------------------------------------------
+// Side-by-side layout helpers (used by drag-to-side and "put next to").
+// ---------------------------------------------------------------------------
+
+function replaceNode(doc: PageDoc, id: string, replacement: BuilderNode[]): PageDoc {
+  const loc = findParent(doc, id)
+  if (!loc) return doc
+  const root = mapChildren(asRoot(doc), loc.parentId, (children) => children.flatMap((c) => (c.id === id ? replacement : [c])))
+  return { ...doc, sections: root.children }
+}
+
+// After a block leaves a column, drop the column if it's now empty, and
+// unwrap the columns block entirely if only one column remains, so dragging
+// a block back out leaves no empty boxes behind.
+export function tidyColumns(doc: PageDoc, columnId: string): PageDoc {
+  const column = findNode(doc, columnId)
+  if (!column || column.type !== 'column' || (column.children?.length ?? 0) > 0) return doc
+  const loc = findParent(doc, columnId)
+  const columns = loc ? findNode(doc, loc.parentId) : null
+  if (!columns || columns.type !== 'columns') return doc
+  const remaining = (columns.children ?? []).filter((c) => c.id !== columnId)
+  if (remaining.length === 0) return removeNode(doc, columns.id)
+  if (remaining.length === 1) return replaceNode(doc, columns.id, remaining[0].children ?? [])
+  return updateNode(doc, columns.id, (n) => ({ ...n, children: remaining, props: resetWidths(n.props) }))
+}
+
+// Custom column widths only make sense for the column count they were set for.
+function resetWidths(props: Record<string, any>): Record<string, any> {
+  if (props.ratio !== 'custom') return props
+  const { widths: _w, ...rest } = props
+  return { ...rest, ratio: 'equal' }
+}
+
+// Places `moving` to the left or right of `targetId`. If the target is the
+// only block in a column, a new column is added next to it; otherwise the
+// target is wrapped together with the moving block in a new two-column row.
+// `makeColumns` / `makeColumn` build fresh nodes (kept out of this module to
+// avoid depending on the block registry).
+export function placeBeside(
+  doc: PageDoc,
+  moving: BuilderNode,
+  targetId: string,
+  side: 'left' | 'right',
+  makeColumns: (children: BuilderNode[]) => BuilderNode,
+  makeColumn: (children: BuilderNode[]) => BuilderNode
+): PageDoc {
+  if (moving.id === targetId || isAncestor(doc, moving.id, targetId)) return doc
+  let next = doc
+  const from = findParent(doc, moving.id)
+  if (from) {
+    next = removeNode(next, moving.id)
+    if (from.parentId !== ROOT_ID) next = tidyColumns(next, from.parentId)
+  }
+  const target = findNode(next, targetId)
+  const loc = findParent(next, targetId)
+  if (!target || !loc) return doc
+  const parent = loc.parentId === ROOT_ID ? null : findNode(next, loc.parentId)
+  if (parent?.type === 'column' && (parent.children?.length ?? 0) === 1) {
+    const colLoc = findParent(next, parent.id)
+    if (colLoc) {
+      next = insertNode(next, colLoc.parentId, colLoc.index + (side === 'right' ? 1 : 0), makeColumn([moving]))
+      return updateNode(next, colLoc.parentId, (n) => ({ ...n, props: resetWidths(n.props) }))
+    }
+  }
+  const pair = side === 'right' ? [makeColumn([target]), makeColumn([moving])] : [makeColumn([moving]), makeColumn([target])]
+  return replaceNode(next, targetId, [makeColumns(pair)])
+}

@@ -134,8 +134,12 @@ export function NodeView({ node, rc }: { node: BuilderNode; rc: RenderContext })
 
     case 'columns': {
       const count = Math.max(1, node.children?.length ?? 1)
+      // Custom widths come from dragging the divider between columns.
+      const custom = p.ratio === 'custom' && Array.isArray(p.widths) && p.widths.length === count && p.widths.every((w: unknown) => typeof w === 'number' && w > 0) ? (p.widths as number[]) : null
       const ratio = RATIOS[p.ratio as string]
-      const cols = ratio && ratio.length === count ? ratio.map((r) => `${r}fr`).join(' ') : `repeat(${count}, minmax(0, 1fr))`
+      const cols = custom
+        ? custom.map((w) => `minmax(0, ${w}fr)`).join(' ')
+        : ratio && ratio.length === count ? ratio.map((r) => `${r}fr`).join(' ') : `repeat(${count}, minmax(0, 1fr))`
       const classes = `pb-columns${p.stackOn && p.stackOn !== 'never' ? ` pb-stack-${p.stackOn}` : ''}${p.reverseOnStack ? ' pb-reverse' : ''}`
       return (
         <div {...baseAttrs(node, rc, classes)} style={{ '--pb-cols': cols } as CSSProperties}>
