@@ -1,7 +1,8 @@
 'use client'
 
 import type { BuilderNode, Device, PageDoc, Style } from '@/lib/builder/types'
-import { cloneWithNewIds, duplicateNode, findNode, findParent, insertNode, moveNode, removeNode, updateNode } from '@/lib/builder/tree'
+import { cloneWithNewIds, duplicateNode, findNode, findParent, insertNode, moveNode, placeBeside, removeNode, tidyColumns, updateNode } from '@/lib/builder/tree'
+import { makeNode } from '@/lib/builder/blocks'
 
 // Builder state with an undo/redo history. Documents are immutable (updates
 // share structure), so keeping ~80 snapshots stays cheap. Rapid edits to the
@@ -29,6 +30,8 @@ export type Action =
   | { type: 'insert'; parentId: string; index: number; node: BuilderNode }
   | { type: 'move'; id: string; parentId: string; index: number }
   | { type: 'remove'; id: string }
+  // Put a block (existing `id`, or a brand-new `node`) next to another one.
+  | { type: 'place-beside'; targetId: string; side: 'left' | 'right'; id?: string; node?: BuilderNode }
   | { type: 'duplicate'; id: string }
   | { type: 'select'; id: string | null }
   | { type: 'edit'; id: string | null }
@@ -65,8 +68,25 @@ export function reducer(state: BuilderState, action: Action): BuilderState {
       return commit(state, updateNode(state.doc, action.id, action.fn), action.key ?? null)
     case 'insert':
       return commit(state, insertNode(state.doc, action.parentId, action.index, action.node), null, { selectedId: action.node.id, editingId: null })
-    case 'move':
-      return commit(state, moveNode(state.doc, action.id, action.parentId, action.index))
+    case 'move': {
+      const from = findParent(state.doc, action.id)
+      let doc = moveNode(state.doc, action.id, action.parentId, action.index)
+      if (doc !== state.doc && from && from.parentId !== action.parentId) doc = tidyColumns(doc, from.parentId)
+      return commit(state, doc)
+    }
+    case 'place-beside': {
+      const moving = action.node ?? (action.id ? findNode(state.doc, action.id) : null)
+      if (!moving) return state
+      const doc = placeBeside(
+        state.doc,
+        moving,
+        action.targetId,
+        action.side,
+        (children) => makeNode('columns', { style: { desktop: { gap: '48px', alignItems: 'center' } }, children }),
+        (children) => makeNode('column', { children })
+      )
+      return commit(state, doc, null, { selectedId: moving.id, editingId: null })
+    }
     case 'remove': {
       const loc = findParent(state.doc, action.id)
       const doc = removeNode(state.doc, action.id)

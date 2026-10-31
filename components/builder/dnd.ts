@@ -1,7 +1,7 @@
 'use client'
 
 import { canContain } from '@/lib/builder/blocks'
-import { findNode, isAncestor, ROOT_ID } from '@/lib/builder/tree'
+import { findNode, findParent, isAncestor, ROOT_ID } from '@/lib/builder/tree'
 import type { BuilderNode, PageDoc } from '@/lib/builder/types'
 
 // Drag state is kept in a module variable because dataTransfer contents are
@@ -31,7 +31,36 @@ export type DropTarget = {
   index: number
   // Indicator geometry relative to the canvas scroll container.
   rect: { x: number; y: number; w: number; h: number }
-  mode: 'line-h' | 'line-v' | 'box'
+  mode: 'line-h' | 'line-v' | 'box' | 'side'
+  // Set when dropping on the left/right edge of a block: the two blocks end
+  // up side by side instead of stacked.
+  beside?: { targetId: string; side: 'left' | 'right' }
+}
+
+// Blocks that can't have something placed beside them (page-level bands and
+// the column cells themselves).
+export const NO_BESIDE = new Set(['section', 'column', 'global'])
+
+// Dropping near the left or right edge of a block in a stacked layout puts the
+// dragged block next to it.
+function besideTarget(doc: PageDoc, root: HTMLElement, el: HTMLElement | null, clientX: number, payload: DragPayload, rel: (r: DOMRect) => DropTarget['rect']): DropTarget | null {
+  if (!el || NO_BESIDE.has(payload.type) || !canContain('column', payload.type)) return null
+  const id = el.dataset.nodeId!
+  const node = findNode(doc, id)
+  if (!node || NO_BESIDE.has(node.type)) return null
+  if (payload.kind === 'node' && (payload.id === id || isAncestor(doc, payload.id, id))) return null
+  const loc = findParent(doc, id)
+  if (!loc || loc.parentId === ROOT_ID) return null
+  // Already in a row (columns, a row container, a grid): normal drops do that.
+  const parentEl = root.querySelector(`[data-node-id="${loc.parentId}"]`) as HTMLElement | null
+  const layoutEl = parentEl?.matches('.pb-section') ? (parentEl.querySelector(':scope > .pb-inner') as HTMLElement | null) : parentEl
+  if (!layoutEl || isHorizontal(layoutEl)) return null
+  const r = el.getBoundingClientRect()
+  const zone = Math.min(120, Math.max(32, r.width * 0.22))
+  const side = clientX < r.left + zone ? 'left' : clientX > r.right - zone ? 'right' : null
+  if (!side) return null
+  const b = rel(r)
+  return { parentId: loc.parentId, index: loc.index, rect: { x: side === 'left' ? b.x - 3 : b.x + b.w - 3, y: b.y, w: 6, h: b.h }, mode: 'side', beside: { targetId: id, side } }
 }
 
 function isHorizontal(el: Element): boolean {
@@ -50,6 +79,8 @@ export function computeDrop(doc: PageDoc, root: HTMLElement, scroller: HTMLEleme
   const rel = (r: DOMRect) => ({ x: r.left - origin.left + scroller.scrollLeft, y: r.top - origin.top + scroller.scrollTop, w: r.width, h: r.height })
 
   let el = (target instanceof Element ? target : null)?.closest('[data-node-id]') as HTMLElement | null
+  const side = besideTarget(doc, root, el, clientX, payload, rel)
+  if (side) return side
   const candidates: { id: string; el: HTMLElement | null }[] = []
   while (el && root.contains(el)) {
     candidates.push({ id: el.dataset.nodeId!, el })
