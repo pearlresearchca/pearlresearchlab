@@ -1,5 +1,5 @@
 -- PEARL Research Lab — database core schema (structure only)
--- Generated 2026-10-31T01:41:42.430Z by scripts/db-export.mjs
+-- Generated 2026-10-31T03:08:03.817Z by scripts/db-export.mjs
 --
 -- Restores the public schema into an InsForge (or any Supabase-style) Postgres
 -- that already provides: the auth schema (auth.users, auth.uid()), the
