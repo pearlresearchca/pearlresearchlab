@@ -1,5 +1,5 @@
 -- PEARL Research Lab — database core schema (structure only)
--- Generated 2026-10-30T19:20:26.956Z by scripts/db-export.mjs
+-- Generated 2026-10-31T01:24:55.035Z by scripts/db-export.mjs
 --
 -- Restores the public schema into an InsForge (or any Supabase-style) Postgres
 -- that already provides: the auth schema (auth.users, auth.uid()), the
@@ -577,7 +577,8 @@ CREATE TABLE IF NOT EXISTS public.research_areas (
   sort_order integer DEFAULT 0 NOT NULL,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   updated_at timestamp with time zone DEFAULT now() NOT NULL,
-  updated_by uuid
+  updated_by uuid,
+  focus_points text[] DEFAULT '{}'::text[] NOT NULL
 );
 ALTER TABLE public.research_areas ADD CONSTRAINT research_areas_pkey PRIMARY KEY (id);
 

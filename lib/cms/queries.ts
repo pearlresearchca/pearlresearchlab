@@ -62,7 +62,7 @@ export async function getResearchAreas(): Promise<ResearchArea[]> {
   const insforge = await createInsForgeServerClient()
   const data = unwrap(await insforge.database
     .from('research_areas')
-    .select('id, title, summary, home_summary, icon_name, image_url, image_key, show_on_home, sort_order, updated_at, updated_by')
+    .select('id, title, summary, home_summary, focus_points, icon_name, image_url, image_key, show_on_home, sort_order, updated_at, updated_by')
     .order('sort_order', { ascending: true })
     .limit(50), 'getResearchAreas')
 

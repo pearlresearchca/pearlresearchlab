@@ -24,6 +24,7 @@ export type ResearchArea = Editable & {
   title: string
   summary: string
   home_summary: string | null
+  focus_points: string[]
   icon_name: string | null
   image_url: string | null
   image_key: string | null

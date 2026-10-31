@@ -20,6 +20,7 @@ export async function updateResearchAreaAction(id: string, formData: FormData): 
           title: String(formData.get('title') ?? ''),
           summary: String(formData.get('summary') ?? ''),
           home_summary: String(formData.get('home_summary') ?? '') || null,
+          focus_points: String(formData.get('focus_points') ?? '').split('\n').map((s) => s.trim()).filter(Boolean),
           icon_name: String(formData.get('icon_name') ?? '') || null,
           show_on_home: formData.get('show_on_home') === 'on',
           sort_order: Number(formData.get('sort_order') ?? 0),
