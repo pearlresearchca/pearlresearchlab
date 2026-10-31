@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUpRight, HeartPulse, Landmark, Leaf, Network, Scale, type LucideIcon } from 'lucide-react'
 import { ArrowLink } from '@/components/site-shell'
 import { Reveal } from '@/components/reveal'
+import { ResearchAreasScroller } from '@/components/research-areas-scroller'
 import { PartnerLogoGrid, PartnerLogoMarquee, PartnerLogoRow } from '@/components/partner-logos'
 import { ProjectFeatureView, TeamCard } from '@/components/site-views'
 import { blocksText } from '@/lib/blog/blocks'
@@ -35,6 +36,38 @@ export function ResearchAreasBlock({ areas, props, link }: { areas: ResearchArea
           </li>
         ))}
       </ol>
+    )
+  }
+  if (props.variant === 'scroll') {
+    return (
+      <ResearchAreasScroller
+        areas={list.map((area, i) => {
+          const Icon = (area.icon_name && AREA_ICONS[area.icon_name]) || HeartPulse
+          const focus = (area.focus_points ?? []).filter(Boolean)
+          return {
+            id: area.id,
+            anchor: areaAnchor(area),
+            title: area.title,
+            image: area.image_url,
+            content: (
+              <div className="ras-copy" key={area.id}>
+                <div className="ras-head">
+                  <span className="ras-num">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="ras-icon"><Icon aria-hidden="true" /></span>
+                </div>
+                <h3>{area.title}</h3>
+                <p className="ras-summary">{area.summary}</p>
+                {focus.length > 0 && (
+                  <ul className="ras-focus" aria-label="What we look at">
+                    {focus.map((f) => <li key={f}>{f}</li>)}
+                  </ul>
+                )}
+                {props.linkLabel && <ArrowLink href={href}>{props.linkLabel}</ArrowLink>}
+              </div>
+            ),
+          }
+        })}
+      />
     )
   }
   if (props.variant === 'rows') {
