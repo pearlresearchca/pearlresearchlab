@@ -57,8 +57,8 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
               </a>
             )}
             {job.status !== 'open' && (
-              <ActionForm action={setJobStatusAction.bind(null, job.id, 'open')} successMessage="Position is open — it’s now on the Careers page">
-                <SubmitButton pendingText="Opening…">Open for applications</SubmitButton>
+              <ActionForm action={setJobStatusAction.bind(null, job.id, 'open')} successMessage={job.status === 'closed' ? 'Position reopened — it’s back on the Careers page' : 'Position is open — it’s now on the Careers page'}>
+                <SubmitButton pendingText="Opening…">{job.status === 'closed' ? 'Reopen position' : 'Open for applications'}</SubmitButton>
               </ActionForm>
             )}
             {job.status === 'open' && (
@@ -136,7 +136,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
           <ActionForm action={updateJobAction.bind(null, job.id)} successMessage="Position saved" className="flex min-w-0 flex-col gap-6">
             <AdminCard title="Position">
               <div className="flex flex-col gap-4">
-                <Field label="Title" htmlFor="title"><TextInput id="title" name="title" defaultValue={job.title} required maxLength={200} /></Field>
+                <Field label="Title" htmlFor="title"><TextInput id="title" name="title" defaultValue={job.title === 'Untitled position' ? '' : job.title} placeholder="e.g. Research Assistant — Food Systems" maxLength={200} /></Field>
                 <Field label="Summary" htmlFor="summary" hint="One or two sentences shown on the Careers page and in search results.">
                   <TextArea id="summary" name="summary" rows={2} defaultValue={job.summary} maxLength={400} />
                 </Field>

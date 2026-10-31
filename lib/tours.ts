@@ -154,8 +154,8 @@ export const TOURS: Tour[] = [
     href: '/admin/jobs',
     steps: [
       { target: '[data-tour="insights"]', title: 'Hiring at a glance', body: 'Open positions, applications, job page views and how many viewers apply.' },
-      { target: '[aria-label="New position title"]', title: 'Add a position', body: 'Name the role and press New position, then describe it and choose Open for applications.' },
-      { target: '[data-tour="job-list"]', title: 'Applications per position', body: 'Each position shows how many people applied. Open it to read applications and download résumés.' },
+      { target: '[data-tour="new-position"]', title: 'Add a position', body: 'Press New position — its form opens right away. Describe the role, then choose Open for applications.' },
+      { target: '[data-tour="job-list"]', title: 'Your positions', body: 'Grouped into open, drafts and past positions. Each shows how many people applied — open it to read applications and download résumés, or press Reopen on a past position.' },
       { target: '[data-tour="page-header"]', title: 'Privacy built in', body: 'Applications and résumés are deleted automatically 7 days after they arrive — download anything you need to keep.' },
     ],
   },

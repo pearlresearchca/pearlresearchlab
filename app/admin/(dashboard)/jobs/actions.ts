@@ -26,34 +26,32 @@ function revalidate(slug?: string) {
   if (slug) revalidatePath(`/careers/${slug}`)
 }
 
-export async function createJobAction(formData: FormData): Promise<ActionResult> {
-  let id = ''
-  const result = await withErrorHandling(async () => {
+// Creates a draft position straight away — nothing to fill in first.
+export async function createJobAction(): Promise<{ id: string } | { error: string }> {
+  try {
     await requirePages()
-    const title = String(formData.get('title') ?? '').trim().slice(0, 200)
-    if (!title) throw new Error('Please give the position a title.')
     const insforge = await createInsForgeServerClient()
-    const base = normalizeSlug(title).replace(/\//g, '-').slice(0, 80) || 'position'
     const { data, error } = await insforge.database
       .from('job_postings')
-      .insert([{ title, slug: `${base}-${Math.random().toString(36).slice(2, 6)}` }])
+      .insert([{ title: 'Untitled position', slug: `untitled-position-${Math.random().toString(36).slice(2, 8)}` }])
       .select('id')
       .single()
     check({ data, error })
-    id = (data as { id: string }).id
     revalidate()
-  })
-  if ('ok' in result && id) redirect(`/admin/jobs/${id}`)
-  return result
+    return { id: (data as { id: string }).id }
+  } catch (err) {
+    console.error(err)
+    return { error: err instanceof Error ? err.message : 'Could not create the position. Please try again.' }
+  }
 }
 
 export async function updateJobAction(id: string, formData: FormData): Promise<ActionResult> {
   return withErrorHandling(async () => {
     await requirePages()
-    const title = String(formData.get('title') ?? '').trim().slice(0, 200)
-    if (!title) throw new Error('Please give the position a title.')
-    const slug = normalizeSlug(String(formData.get('slug') ?? '') || title).replace(/\//g, '-').slice(0, 90)
-    if (!slug) throw new Error('Please enter a web address for the position.')
+    const title = String(formData.get('title') ?? '').trim().slice(0, 200) || 'Untitled position'
+    let slug = normalizeSlug(String(formData.get('slug') ?? '')).replace(/\//g, '-').slice(0, 90)
+    // A placeholder address follows the title once the position is named.
+    if (!slug || (slug.startsWith('untitled-position-') && title !== 'Untitled position')) slug = normalizeSlug(title).replace(/\//g, '-').slice(0, 80) || 'position'
     const closes = String(formData.get('closes_on') ?? '').trim()
     if (closes && !/^\d{4}-\d{2}-\d{2}$/.test(closes)) throw new Error('Please choose a valid closing date.')
     const insforge = await createInsForgeServerClient()
@@ -81,10 +79,13 @@ export async function setJobStatusAction(id: string, status: 'draft' | 'open' | 
   return withErrorHandling(async () => {
     await requirePages()
     const insforge = await createInsForgeServerClient()
-    const { data: job } = await insforge.database.from('job_postings').select('slug, description_html').eq('id', id).maybeSingle()
+    const { data: job } = await insforge.database.from('job_postings').select('slug, description_html, closes_on').eq('id', id).maybeSingle()
     if (!job) throw new Error('This position no longer exists.')
     if (status === 'open' && !String(job.description_html ?? '').replace(/<[^>]+>/g, '').trim()) throw new Error('Add a job description before opening the position.')
-    check(await insforge.database.from('job_postings').update({ status }).eq('id', id))
+    // Reopening a past position drops a closing date that has already passed,
+    // otherwise it would stay hidden on the Careers page.
+    const expired = status === 'open' && job.closes_on && job.closes_on < new Date().toISOString().slice(0, 10)
+    check(await insforge.database.from('job_postings').update({ status, ...(expired ? { closes_on: null } : {}) }).eq('id', id))
     revalidate(job.slug)
   })
 }
