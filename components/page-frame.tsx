@@ -1,3 +1,4 @@
+import { ResearchAmbient } from './research-ambient'
 import { SiteFooter, SiteHeader, type ResolvedNavItem } from './site-shell'
 import { getPageSlugs, getSiteConfig } from '@/lib/builder/queries'
 import { googleFontsHref, themeCss } from '@/lib/builder/theme'
@@ -38,6 +39,7 @@ export async function PageFrame({ children, extraFonts = [] }: { children: React
         </>
       )}
       <style dangerouslySetInnerHTML={{ __html: themeCss(config.theme) }} />
+      <ResearchAmbient />
       <SiteHeader logoUrl={config.site.logoUrl ?? ''} nav={nav} header={config.header} site={config.site} />
       <div className="page-transition" id="main-content" tabIndex={-1}>
         {children}

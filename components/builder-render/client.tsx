@@ -289,3 +289,97 @@ export function FormBlock({ pageId, nodeId, props, preview }: { pageId: string; 
     </form>
   )
 }
+
+// Auto-advancing feature carousel: one slide visible at a time, arrows, dots
+// and swipe. Pauses on hover/focus and when the tab is hidden; never
+// auto-advances for visitors who prefer reduced motion.
+export type CarouselSlide = { id: string; image: string | null; imageAlt: string; eyebrow: string; title: string; text: string; linkLabel: string; href: string | null; external: boolean }
+
+export function FeatureCarouselBlock({ slides, interval, label }: { slides: CarouselSlide[]; interval: number; label: string }) {
+  const [index, setIndex] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [reduced, setReduced] = useState(false)
+  const touchX = useRef<number | null>(null)
+  const count = slides.length
+  const go = useCallback((i: number) => setIndex(((i % count) + count) % count), [count])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const update = () => setReduced(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
+
+  useEffect(() => {
+    if (paused || reduced || count < 2) return
+    const t = window.setTimeout(() => {
+      if (document.visibilityState === 'visible') go(index + 1)
+    }, Math.max(3000, interval))
+    return () => window.clearTimeout(t)
+  }, [index, paused, reduced, count, interval, go])
+
+  if (count === 0) return null
+  return (
+    <div
+      className={`pb-fc${paused || reduced ? ' is-paused' : ''}`}
+      role="region"
+      aria-roledescription="carousel"
+      aria-label={label || 'Featured'}
+      style={{ '--pb-fc-interval': `${Math.max(3000, interval)}ms` } as React.CSSProperties}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setPaused(false) }}
+      onTouchStart={(e) => { touchX.current = e.touches[0].clientX }}
+      onTouchEnd={(e) => {
+        if (touchX.current === null) return
+        const dx = e.changedTouches[0].clientX - touchX.current
+        if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1))
+        touchX.current = null
+      }}
+    >
+      <div className="pb-fc-viewport">
+        {slides.map((s, i) => (
+          <article key={s.id} className={i === index ? 'pb-fc-slide is-active' : 'pb-fc-slide'} aria-roledescription="slide" aria-label={`${i + 1} of ${count}`} aria-hidden={i !== index} inert={i !== index}>
+            <div className="pb-fc-media">
+              {s.image && <img src={s.image} alt={s.imageAlt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />}
+            </div>
+            <div className="pb-fc-body">
+              {s.eyebrow && <p className="pb-fc-eyebrow">{s.eyebrow}</p>}
+              <h3>{s.title}</h3>
+              {s.text && <p className="pb-fc-text">{s.text}</p>}
+              {s.href && s.linkLabel && (
+                <a className="pb-fc-link" href={s.href} {...(s.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                  {s.linkLabel} <ArrowUpRight aria-hidden="true" />
+                  {s.external && <span className="sr-only"> (opens in a new tab)</span>}
+                </a>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+      {count > 1 && (
+        <div className="pb-fc-rail">
+          <p className="pb-fc-rail-head" aria-hidden="true">
+            <span>{String(index + 1).padStart(2, '0')}</span> / {String(count).padStart(2, '0')}
+          </p>
+          <div className="pb-fc-tabs" role="group" aria-label="Choose slide">
+            {slides.map((s, i) => (
+              <button key={s.id} type="button" className={i === index ? 'pb-fc-tab is-active' : 'pb-fc-tab'} aria-label={`Show slide ${i + 1}: ${s.title}`} aria-current={i === index} onClick={() => go(i)}>
+                <span className="pb-fc-tab-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <span className="pb-fc-tab-title" aria-hidden="true">{s.title}</span>
+                <span className="pb-fc-tab-bar" aria-hidden="true"><span key={i === index ? `on-${index}` : 'off'} /></span>
+              </button>
+            ))}
+          </div>
+          <div className="pb-fc-arrows">
+            <button type="button" aria-label="Previous slide" onClick={() => go(index - 1)}><ChevronLeft aria-hidden="true" /></button>
+            <button type="button" aria-label="Next slide" onClick={() => go(index + 1)}><ChevronRight aria-hidden="true" /></button>
+          </div>
+        </div>
+      )}
+      <p className="sr-only" aria-live={paused || reduced ? 'polite' : 'off'}>{`Slide ${index + 1} of ${count}: ${slides[index]?.title ?? ''}`}</p>
+    </div>
+  )
+}
